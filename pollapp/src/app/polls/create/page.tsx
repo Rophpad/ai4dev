@@ -1,5 +1,6 @@
 import { CreatePollForm } from "@/components/polls/create-poll-form";
 import { RequireAuth } from "@/components/auth/protected-route";
+import type { Metadata } from "next";
 
 export default function CreatePollPage() {
   return (
@@ -13,7 +14,7 @@ export default function CreatePollPage() {
   );
 }
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Create Poll | PollApp",
   description: "Create a new poll and gather opinions from your audience",
 };

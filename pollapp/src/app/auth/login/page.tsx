@@ -1,5 +1,6 @@
 import { LoginForm } from "@/components/auth/login-form";
 import { GuestOnly } from "@/components/auth/protected-route";
+import type { Metadata } from "next";
 
 export default function LoginPage() {
   return (
@@ -13,7 +14,7 @@ export default function LoginPage() {
   );
 }
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Sign In | PollApp",
   description: "Sign in to your PollApp account",
 };

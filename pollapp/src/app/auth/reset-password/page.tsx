@@ -1,5 +1,6 @@
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import { GuestOnly } from "@/components/auth/protected-route";
+import type { Metadata } from "next";
 
 export default function ResetPasswordPage() {
   return (
@@ -13,7 +14,7 @@ export default function ResetPasswordPage() {
   );
 }
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Reset Password | PollApp",
   description: "Reset your PollApp account password",
 };

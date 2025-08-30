@@ -1,5 +1,6 @@
 import { RegisterForm } from "@/components/auth/register-form";
 import { GuestOnly } from "@/components/auth/protected-route";
+import type { Metadata } from "next";
 
 export default function RegisterPage() {
   return (
@@ -13,7 +14,7 @@ export default function RegisterPage() {
   );
 }
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Sign Up | PollApp",
   description: "Create your PollApp account",
 };

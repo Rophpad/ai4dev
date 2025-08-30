@@ -1,18 +1,26 @@
 import { PollCard } from "@/components/polls/poll-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter, Plus } from "lucide-react";
 import Link from "next/link";
 import type { Poll } from "@/types";
+import type { Metadata } from "next";
 
 // Sample data - replace with actual API calls
 const samplePolls: Poll[] = [
   {
     id: "1",
     title: "What's your favorite programming language?",
-    description: "Help us understand the community's preferences for programming languages in 2024.",
+    description:
+      "Help us understand the community's preferences for programming languages in 2024.",
     options: [
       { id: "1a", text: "JavaScript", votes: 45 },
       { id: "1b", text: "Python", votes: 38 },
@@ -51,7 +59,8 @@ const samplePolls: Poll[] = [
   {
     id: "3",
     title: "Which feature should we prioritize next?",
-    description: "Your input helps us decide what to work on next for our product roadmap.",
+    description:
+      "Your input helps us decide what to work on next for our product roadmap.",
     options: [
       { id: "3a", text: "Dark mode", votes: 67 },
       { id: "3b", text: "Mobile app", votes: 89 },
@@ -70,7 +79,8 @@ const samplePolls: Poll[] = [
   {
     id: "4",
     title: "Office lunch preferences",
-    description: "What type of food should we order for the office lunch this Friday?",
+    description:
+      "What type of food should we order for the office lunch this Friday?",
     options: [
       { id: "4a", text: "Pizza", votes: 15 },
       { id: "4b", text: "Asian cuisine", votes: 22 },
@@ -89,7 +99,8 @@ const samplePolls: Poll[] = [
   {
     id: "5",
     title: "Weekend workshop topics",
-    description: "Which topics would you be most interested in for our upcoming weekend workshops?",
+    description:
+      "Which topics would you be most interested in for our upcoming weekend workshops?",
     options: [
       { id: "5a", text: "Web Development", votes: 0 },
       { id: "5b", text: "Data Science", votes: 0 },
@@ -108,9 +119,15 @@ const samplePolls: Poll[] = [
 ];
 
 export default function PollsPage() {
-  const activePolls = samplePolls.filter(poll => poll.isActive && (!poll.expiresAt || new Date(poll.expiresAt) > new Date()));
-  const expiredPolls = samplePolls.filter(poll => poll.expiresAt && new Date(poll.expiresAt) <= new Date());
-  const draftPolls = samplePolls.filter(poll => !poll.isActive);
+  const activePolls = samplePolls.filter(
+    (poll) =>
+      poll.isActive &&
+      (!poll.expiresAt || new Date(poll.expiresAt) > new Date()),
+  );
+  const expiredPolls = samplePolls.filter(
+    (poll) => poll.expiresAt && new Date(poll.expiresAt) <= new Date(),
+  );
+  const draftPolls = samplePolls.filter((poll) => !poll.isActive);
 
   return (
     <div className="min-h-screen bg-background">
@@ -135,10 +152,7 @@ export default function PollsPage() {
         <div className="flex flex-col lg:flex-row gap-4 mb-8">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search polls..."
-              className="pl-10"
-            />
+            <Input placeholder="Search polls..." className="pl-10" />
           </div>
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
@@ -201,7 +215,9 @@ export default function PollsPage() {
           <div className="mb-12">
             <h2 className="text-2xl font-semibold mb-6 flex items-center">
               Recent Results
-              <Badge variant="secondary" className="ml-3">{expiredPolls.length}</Badge>
+              <Badge variant="secondary" className="ml-3">
+                {expiredPolls.length}
+              </Badge>
             </h2>
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {expiredPolls.map((poll) => (
@@ -221,7 +237,9 @@ export default function PollsPage() {
           <div className="mb-12">
             <h2 className="text-2xl font-semibold mb-6 flex items-center">
               Draft Polls
-              <Badge variant="outline" className="ml-3">{draftPolls.length}</Badge>
+              <Badge variant="outline" className="ml-3">
+                {draftPolls.length}
+              </Badge>
             </h2>
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {draftPolls.map((poll) => (
@@ -259,7 +277,7 @@ export default function PollsPage() {
   );
 }
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "All Polls | PollApp",
   description: "Browse and participate in community polls",
 };

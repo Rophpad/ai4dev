@@ -48,13 +48,13 @@ export function ResetPasswordForm() {
           </div>
           <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
           <CardDescription>
-            We've sent a password reset link to {email}
+            We&apos;ve sent a password reset link to {email}
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <p className="text-sm text-muted-foreground">
-            Click the link in the email to reset your password. If you don't see
-            the email, check your spam folder.
+            Click the link in the email to reset your password. If you
+            don&apos;t see the email, check your spam folder.
           </p>
 
           <div className="space-y-2">
@@ -86,7 +86,7 @@ export function ResetPasswordForm() {
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
         <CardDescription>
-          Enter your email address and we'll send you a link to reset your
+          Enter your email address and we&apos;ll send you a link to reset your
           password
         </CardDescription>
       </CardHeader>

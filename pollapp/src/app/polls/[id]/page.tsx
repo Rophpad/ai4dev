@@ -1,13 +1,15 @@
 import { PollVoting } from "@/components/polls/poll-voting";
 import { notFound } from "next/navigation";
 import type { Poll } from "@/types";
+import type { Metadata } from "next";
 
 // Sample data - replace with actual API calls
 const samplePolls: Record<string, Poll> = {
   "1": {
     id: "1",
     title: "What's your favorite programming language?",
-    description: "Help us understand the community's preferences for programming languages in 2024. This poll will help us decide which languages to focus on for our upcoming tutorials and courses.",
+    description:
+      "Help us understand the community's preferences for programming languages in 2024. This poll will help us decide which languages to focus on for our upcoming tutorials and courses.",
     options: [
       { id: "1a", text: "JavaScript", votes: 45 },
       { id: "1b", text: "Python", votes: 38 },
@@ -27,7 +29,8 @@ const samplePolls: Record<string, Poll> = {
   "2": {
     id: "2",
     title: "Best time for team meetings?",
-    description: "Let's find a time that works for everyone on the team. Please select all time slots that work for you.",
+    description:
+      "Let's find a time that works for everyone on the team. Please select all time slots that work for you.",
     options: [
       { id: "2a", text: "9:00 AM - 10:00 AM", votes: 23 },
       { id: "2b", text: "2:00 PM - 3:00 PM", votes: 31 },
@@ -46,7 +49,8 @@ const samplePolls: Record<string, Poll> = {
   "3": {
     id: "3",
     title: "Which feature should we prioritize next?",
-    description: "Your input helps us decide what to work on next for our product roadmap. Each vote represents what our users want most.",
+    description:
+      "Your input helps us decide what to work on next for our product roadmap. Each vote represents what our users want most.",
     options: [
       { id: "3a", text: "Dark mode support", votes: 67 },
       { id: "3b", text: "Mobile app", votes: 89 },
@@ -65,7 +69,8 @@ const samplePolls: Record<string, Poll> = {
   "4": {
     id: "4",
     title: "Office lunch preferences",
-    description: "What type of food should we order for the office lunch this Friday? The winning option will be our lunch for the week!",
+    description:
+      "What type of food should we order for the office lunch this Friday? The winning option will be our lunch for the week!",
     options: [
       { id: "4a", text: "Pizza (Italian classics)", votes: 15 },
       { id: "4b", text: "Asian cuisine (Thai/Chinese)", votes: 22 },
@@ -108,7 +113,10 @@ interface PollPageProps {
   };
 }
 
-export default async function PollPage({ params, searchParams }: PollPageProps) {
+export default async function PollPage({
+  params,
+  searchParams,
+}: PollPageProps) {
   const poll = samplePolls[params.id];
 
   if (!poll) {
@@ -130,7 +138,7 @@ export default async function PollPage({ params, searchParams }: PollPageProps) 
     console.log(`User voted for poll ${params.id} with options:`, optionIds);
 
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // In a real app, you would:
     // 1. Call your API endpoint
@@ -165,12 +173,18 @@ export default async function PollPage({ params, searchParams }: PollPageProps) 
           <h2 className="text-xl font-semibold mb-6">Other Active Polls</h2>
           <div className="grid gap-4 md:grid-cols-2">
             {Object.values(samplePolls)
-              .filter(p => p.id !== poll.id && p.isActive)
+              .filter((p) => p.id !== poll.id && p.isActive)
               .slice(0, 4)
-              .map(relatedPoll => (
-                <div key={relatedPoll.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+              .map((relatedPoll) => (
+                <div
+                  key={relatedPoll.id}
+                  className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                >
                   <h3 className="font-medium mb-2 line-clamp-2">
-                    <a href={`/polls/${relatedPoll.id}`} className="hover:text-primary">
+                    <a
+                      href={`/polls/${relatedPoll.id}`}
+                      className="hover:text-primary"
+                    >
                       {relatedPoll.title}
                     </a>
                   </h3>
@@ -179,8 +193,7 @@ export default async function PollPage({ params, searchParams }: PollPageProps) 
                     <span>{relatedPoll.options.length} options</span>
                   </div>
                 </div>
-              ))
-            }
+              ))}
           </div>
         </div>
       </div>
@@ -188,7 +201,11 @@ export default async function PollPage({ params, searchParams }: PollPageProps) 
   );
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
   const poll = samplePolls[params.id];
 
   if (!poll) {

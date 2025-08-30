@@ -216,15 +216,24 @@ export function useProfile() {
     }
 
     if (username.length < 3) {
-      return { available: false, message: "Username must be at least 3 characters" };
+      return {
+        available: false,
+        message: "Username must be at least 3 characters",
+      };
     }
 
     if (username.length > 30) {
-      return { available: false, message: "Username must be less than 30 characters" };
+      return {
+        available: false,
+        message: "Username must be less than 30 characters",
+      };
     }
 
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      return { available: false, message: "Username can only contain letters, numbers, and underscores" };
+      return {
+        available: false,
+        message: "Username can only contain letters, numbers, and underscores",
+      };
     }
 
     try {
@@ -239,10 +248,16 @@ export function useProfile() {
 
       return {
         available: data.length === 0,
-        message: data.length === 0 ? "Username is available" : "Username is already taken",
+        message:
+          data.length === 0
+            ? "Username is available"
+            : "Username is already taken",
       };
     } catch (err) {
-      return { available: false, message: "Failed to check username availability" };
+      return {
+        available: false,
+        message: "Failed to check username availability",
+      };
     }
   };
 
@@ -254,7 +269,7 @@ export function useProfile() {
       setProfile(null);
       setError(null);
     }
-  }, [user]);
+  }, [user, fetchProfile]);
 
   return {
     profile,

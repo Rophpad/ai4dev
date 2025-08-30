@@ -1,12 +1,15 @@
 import { CreatePollForm } from "@/components/polls/create-poll-form";
+import { RequireAuth } from "@/components/auth/protected-route";
 
 export default function CreatePollPage() {
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
-      <div className="container mx-auto">
-        <CreatePollForm />
+    <RequireAuth>
+      <div className="min-h-screen bg-background py-8 px-4">
+        <div className="container mx-auto">
+          <CreatePollForm />
+        </div>
       </div>
-    </div>
+    </RequireAuth>
   );
 }
 

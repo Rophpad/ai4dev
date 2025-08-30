@@ -4,11 +4,18 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Mail, Lock, User } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 import type { RegisterData } from "@/types";
 
 export function RegisterForm() {
@@ -18,8 +25,8 @@ export function RegisterForm() {
     password: "",
     confirmPassword: "",
   });
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { signUp, loading } = useAuth();
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,34 +53,24 @@ export function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError(null);
 
     // Validate form
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
-      setIsLoading(false);
       return;
     }
 
     try {
-      // TODO: Replace with actual registration logic
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Simulate successful registration
-      console.log("Registration attempt:", formData);
-
-      // TODO: Handle successful registration
-      // - Create user account
-      // - Store auth token
-      // - Update auth state
-      // - Redirect to dashboard or verification page
-      router.push("/dashboard");
-    } catch (err) {
-      setError("Failed to create account. Please try again.");
-    } finally {
-      setIsLoading(false);
+      await signUp(formData);
+      // Show success message - user needs to check email for verification
+      setError(null);
+      router.push(
+        "/auth/login?message=Please check your email to verify your account",
+      );
+    } catch (err: any) {
+      setError(err.message || "Failed to create account. Please try again.");
     }
   };
 
@@ -106,7 +103,7 @@ export function RegisterForm() {
                 onChange={handleChange}
                 className="pl-10"
                 required
-                disabled={isLoading}
+                disabled={loading}
               />
             </div>
           </div>
@@ -124,7 +121,7 @@ export function RegisterForm() {
                 onChange={handleChange}
                 className="pl-10"
                 required
-                disabled={isLoading}
+                disabled={loading}
                 minLength={3}
               />
             </div>
@@ -143,7 +140,7 @@ export function RegisterForm() {
                 onChange={handleChange}
                 className="pl-10"
                 required
-                disabled={isLoading}
+                disabled={loading}
                 minLength={8}
               />
             </div>
@@ -165,13 +162,13 @@ export function RegisterForm() {
                 onChange={handleChange}
                 className="pl-10"
                 required
-                disabled={isLoading}
+                disabled={loading}
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating Account...

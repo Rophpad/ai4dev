@@ -1,16 +1,16 @@
-// User types
-export interface User {
-  id: string;
-  email: string;
-  username: string;
-  createdAt: Date;
-  updatedAt: Date;
+// User types - extending Supabase User
+import { User as SupabaseUser } from "@supabase/supabase-js";
+
+export interface User extends SupabaseUser {
+  username?: string;
+  display_name?: string;
 }
 
 export interface AuthUser {
   id: string;
   email: string;
-  username: string;
+  username?: string;
+  display_name?: string;
 }
 
 // Poll types
@@ -102,10 +102,10 @@ export interface PollFormData {
 
 // Filter and sorting types
 export interface PollFilters {
-  status?: 'active' | 'expired' | 'all';
+  status?: "active" | "expired" | "all";
   createdBy?: string;
-  sortBy?: 'createdAt' | 'totalVotes' | 'title';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "createdAt" | "totalVotes" | "title";
+  sortOrder?: "asc" | "desc";
 }
 
 // State types

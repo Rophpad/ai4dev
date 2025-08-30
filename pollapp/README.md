@@ -17,6 +17,8 @@ A modern, feature-rich polling application built with Next.js 15, TypeScript, an
 
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
 - **Styling**: Tailwind CSS v4
 - **UI Components**: Shadcn/UI
 - **Icons**: Lucide React
@@ -65,6 +67,7 @@ pollapp/
 
 - Node.js 18+ 
 - npm or yarn
+- Supabase account (free tier available)
 
 ### Installation
 
@@ -81,14 +84,42 @@ pollapp/
    yarn install
    ```
 
-3. **Run the development server**
+3. **Set up Supabase**
+
+   a. Create a new project at [https://app.supabase.com](https://app.supabase.com)
+   
+   b. Copy the project URL and anon key from Settings > API
+   
+   c. Create a `.env.local` file in the root directory:
+   ```bash
+   cp .env.local.example .env.local
+   ```
+   
+   d. Add your Supabase credentials:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+4. **Set up the database**
+
+   a. Go to the SQL Editor in your Supabase dashboard
+   
+   b. Copy and run the SQL from `supabase-schema.sql`
+   
+   c. Create the avatars storage bucket:
+      - Go to Storage in your Supabase dashboard
+      - Create a new bucket called "avatars"
+      - Make it public
+
+5. **Run the development server**
    ```bash
    npm run dev
    # or
    yarn dev
    ```
 
-4. **Open your browser**
+6. **Open your browser**
    
    Navigate to [http://localhost:3000](http://localhost:3000)
 
@@ -146,30 +177,60 @@ The app uses Tailwind CSS with a custom design system. Colors and themes can be 
 This is a scaffolded project with placeholder functionality. The following features need implementation:
 
 ### Backend Integration
-- [ ] API endpoints for authentication
-- [ ] Poll CRUD operations
+- [x] Supabase database integration
+- [x] User authentication with Supabase Auth
+- [ ] Poll CRUD operations API
 - [ ] Vote recording and validation
-- [ ] Real-time updates (WebSocket/SSE)
-- [ ] Database integration
+- [ ] Real-time updates (Supabase Realtime)
+- [ ] Email verification and password reset
 
 ### Authentication
-- [ ] JWT token management
-- [ ] Password hashing and validation
-- [ ] Session management
-- [ ] OAuth integration (optional)
+- [x] JWT token management (via Supabase)
+- [x] Email/password authentication
+- [x] Password reset functionality
+- [x] Protected routes
+- [ ] OAuth integration (Google, GitHub, etc.)
 
 ### Features to Implement
 - [ ] Poll analytics and insights
-- [ ] User profiles and settings
+- [x] User profiles and settings (basic)
 - [ ] Poll sharing and embedding
 - [ ] Comment system
 - [ ] Poll templates
 - [ ] Export functionality
+- [ ] Real-time voting updates
+- [ ] File uploads for poll images
+- [ ] Email notifications
 
 ### Testing
 - [ ] Unit tests for components
 - [ ] Integration tests for hooks
 - [ ] E2E tests for user flows
+
+## 🔧 Environment Variables
+
+The following environment variables are required:
+
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+Get these from your Supabase project settings at: Settings > API
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Add your environment variables in the Vercel dashboard
+4. Deploy!
+
+### Other Platforms
+
+Make sure to set the environment variables in your deployment platform.
 
 ## 🤝 Contributing
 
@@ -186,6 +247,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - [Next.js](https://nextjs.org/) for the amazing React framework
+- [Supabase](https://supabase.com/) for the backend-as-a-service platform
 - [Shadcn/UI](https://ui.shadcn.com/) for the beautiful component library
 - [Tailwind CSS](https://tailwindcss.com/) for the utility-first CSS framework
 - [Lucide](https://lucide.dev/) for the icon library

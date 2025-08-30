@@ -11,19 +11,34 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { User, LogOut, Settings, Plus, BarChart3 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
 
-interface NavbarProps {
-  user?: {
-    id: string;
-    email: string;
-    username: string;
-  } | null;
-}
-
-export function Navbar({ user }: NavbarProps) {
+export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, signOut, loading } = useAuth();
 
   const isActive = (path: string) => pathname === path;
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.push("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  const getDisplayName = () => {
+    if (user?.user_metadata?.username) {
+      return user.user_metadata.username;
+    }
+    if (user?.user_metadata?.display_name) {
+      return user.user_metadata.display_name;
+    }
+    return user?.email?.split("@")[0] || "User";
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -41,9 +56,7 @@ export function Navbar({ user }: NavbarProps) {
           <Link
             href="/polls"
             className={`text-sm font-medium transition-colors hover:text-primary ${
-              isActive("/polls")
-                ? "text-foreground"
-                : "text-foreground/60"
+              isActive("/polls") ? "text-foreground" : "text-foreground/60"
             }`}
           >
             All Polls
@@ -76,9 +89,13 @@ export function Navbar({ user }: NavbarProps) {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
                   <User className="h-4 w-4" />
-                  <span>{user.username}</span>
+                  <span>{getDisplayName()}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -91,7 +108,11 @@ export function Navbar({ user }: NavbarProps) {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">
+                <DropdownMenuItem
+                  className="text-red-600 cursor-pointer"
+                  onClick={handleSignOut}
+                  disabled={loading}
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Sign Out</span>
                 </DropdownMenuItem>
@@ -105,9 +126,7 @@ export function Navbar({ user }: NavbarProps) {
                 </Button>
               </Link>
               <Link href="/auth/register">
-                <Button size="sm">
-                  Sign Up
-                </Button>
+                <Button size="sm">Sign Up</Button>
               </Link>
             </div>
           )}

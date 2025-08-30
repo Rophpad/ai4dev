@@ -1,208 +1,111 @@
 "use client";
 
-import { useState, useEffect, useContext, createContext, ReactNode } from "react";
-import type { AuthUser, LoginCredentials, RegisterData, AuthResponse } from "@/types";
+import { createContext, useContext, useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { User, AuthError } from "@supabase/supabase-js";
+import type { LoginCredentials, RegisterData } from "@/types";
 
 interface AuthContextType {
-  user: AuthUser | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
-  logout: () => Promise<void>;
-  refreshToken: () => Promise<void>;
+  user: User | null;
+  loading: boolean;
+  signIn: (credentials: LoginCredentials) => Promise<void>;
+  signUp: (data: RegisterData) => Promise<void>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock authentication - replace with actual implementation
-const mockUsers: Array<AuthUser & { password: string }> = [
-  {
-    id: "1",
-    email: "john@example.com",
-    username: "john_doe",
-    password: "password123",
-  },
-  {
-    id: "2",
-    email: "jane@example.com",
-    username: "jane_smith",
-    password: "password456",
-  },
-];
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
   useEffect(() => {
-    // Check for existing session on mount
-    const checkAuth = async () => {
-      try {
-        setIsLoading(true);
-
-        // TODO: Replace with actual session check
-        const token = localStorage.getItem("auth_token");
-        const userData = localStorage.getItem("auth_user");
-
-        if (token && userData) {
-          // Verify token is still valid
-          await new Promise(resolve => setTimeout(resolve, 500));
-
-          const parsedUser = JSON.parse(userData);
-          setUser(parsedUser);
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        // Clear invalid session
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("auth_user");
-      } finally {
-        setIsLoading(false);
-      }
+    // Get initial session
+    const getInitialSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setLoading(false);
     };
 
-    checkAuth();
-  }, []);
+    getInitialSession();
 
-  const login = async (credentials: LoginCredentials) => {
-    try {
-      setIsLoading(true);
+    // Listen for auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
 
-      // Mock authentication
-      const foundUser = mockUsers.find(
-        u => u.email === credentials.email && u.password === credentials.password
-      );
+  const signIn = async ({ email, password }: LoginCredentials) => {
+    setLoading(true);
 
-      if (!foundUser) {
-        throw new Error("Invalid email or password");
-      }
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      const authUser: AuthUser = {
-        id: foundUser.id,
-        email: foundUser.email,
-        username: foundUser.username,
-      };
-
-      const mockToken = `mock_token_${foundUser.id}_${Date.now()}`;
-
-      // Store auth data
-      localStorage.setItem("auth_token", mockToken);
-      localStorage.setItem("auth_user", JSON.stringify(authUser));
-
-      setUser(authUser);
-    } catch (error) {
-      throw error;
-    } finally {
-      setIsLoading(false);
+    if (error) {
+      setLoading(false);
+      throw new Error(error.message);
     }
   };
 
-  const register = async (data: RegisterData) => {
-    try {
-      setIsLoading(true);
+  const signUp = async ({ email, password, username }: RegisterData) => {
+    setLoading(true);
 
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username,
+          display_name: username,
+        },
+      },
+    });
 
-      // Check if user already exists
-      const existingUser = mockUsers.find(
-        u => u.email === data.email || u.username === data.username
-      );
-
-      if (existingUser) {
-        if (existingUser.email === data.email) {
-          throw new Error("An account with this email already exists");
-        }
-        if (existingUser.username === data.username) {
-          throw new Error("This username is already taken");
-        }
-      }
-
-      // Create new user
-      const newUser: AuthUser & { password: string } = {
-        id: Date.now().toString(),
-        email: data.email,
-        username: data.username,
-        password: data.password,
-      };
-
-      mockUsers.push(newUser);
-
-      const authUser: AuthUser = {
-        id: newUser.id,
-        email: newUser.email,
-        username: newUser.username,
-      };
-
-      const mockToken = `mock_token_${newUser.id}_${Date.now()}`;
-
-      // Store auth data
-      localStorage.setItem("auth_token", mockToken);
-      localStorage.setItem("auth_user", JSON.stringify(authUser));
-
-      setUser(authUser);
-    } catch (error) {
-      throw error;
-    } finally {
-      setIsLoading(false);
+    if (error) {
+      setLoading(false);
+      throw new Error(error.message);
     }
   };
 
-  const logout = async () => {
-    try {
-      setIsLoading(true);
+  const signOut = async () => {
+    setLoading(true);
 
-      // TODO: Replace with actual API call to invalidate token
-      await new Promise(resolve => setTimeout(resolve, 300));
+    const { error } = await supabase.auth.signOut();
 
-      // Clear auth data
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("auth_user");
-
-      setUser(null);
-    } catch (error) {
-      console.error("Logout failed:", error);
-      // Force logout even if API call fails
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("auth_user");
-      setUser(null);
-    } finally {
-      setIsLoading(false);
+    if (error) {
+      setLoading(false);
+      throw new Error(error.message);
     }
   };
 
-  const refreshToken = async () => {
-    try {
-      const token = localStorage.getItem("auth_token");
-      if (!token) {
-        throw new Error("No token to refresh");
-      }
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
 
-      // TODO: Replace with actual token refresh API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const newToken = `refreshed_${token}_${Date.now()}`;
-      localStorage.setItem("auth_token", newToken);
-    } catch (error) {
-      console.error("Token refresh failed:", error);
-      // If refresh fails, logout user
-      await logout();
-      throw error;
+    if (error) {
+      throw new Error(error.message);
     }
   };
 
   const value: AuthContextType = {
     user,
-    isLoading,
-    isAuthenticated: !!user,
-    login,
-    register,
-    logout,
-    refreshToken,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -216,56 +119,24 @@ export function useAuth() {
   return context;
 }
 
-// Hook for protecting routes
+// Hook for protecting routes that require authentication
 export function useRequireAuth() {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      // TODO: Redirect to login page
-      // For now, just log a warning
-      console.warn("Authentication required for this route");
-    }
-  }, [user, isLoading]);
-
-  return { user, isLoading, isAuthenticated: !!user };
+  return {
+    user,
+    loading,
+    isAuthenticated: !!user,
+  };
 }
 
 // Hook for guest-only routes (login, register)
 export function useGuestOnly() {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    if (!isLoading && user) {
-      // TODO: Redirect to dashboard
-      // For now, just log a message
-      console.log("User is already authenticated, should redirect");
-    }
-  }, [user, isLoading]);
-
-  return { user, isLoading, isAuthenticated: !!user };
-}
-
-// Utility function to get auth headers for API requests
-export function getAuthHeaders() {
-  const token = localStorage.getItem("auth_token");
-  return token
-    ? {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      }
-    : {
-        "Content-Type": "application/json",
-      };
-}
-
-// Utility function to handle auth errors
-export function handleAuthError(error: any) {
-  if (error.status === 401 || error.status === 403) {
-    // Token expired or invalid
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("auth_user");
-    // TODO: Redirect to login
-    window.location.href = "/auth/login";
-  }
+  return {
+    user,
+    loading,
+    isAuthenticated: !!user,
+  };
 }

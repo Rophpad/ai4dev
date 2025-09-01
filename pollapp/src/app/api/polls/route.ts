@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json(
         { error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -27,12 +27,14 @@ export async function POST(request: NextRequest) {
     if (!validation.isValid) {
       return NextResponse.json(
         { error: validation.errors[0] },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Filter valid options
-    const validOptions = pollData.options.filter(option => option.trim() !== "");
+    const validOptions = pollData.options.filter(
+      (option) => option.trim() !== "",
+    );
 
     // Create poll in database
     const { data: poll, error: pollError } = await supabase
@@ -45,17 +47,16 @@ export async function POST(request: NextRequest) {
           status: "active",
           vote_type: pollData.allowMultipleVotes ? "multiple" : "single",
           is_anonymous: pollData.isAnonymous || false,
-          expires_at: pollData.expiresAt ? pollData.expiresAt.toISOString() : null,
+          expires_at: pollData.expiresAt
+            ? pollData.expiresAt.toISOString()
+            : null,
         },
       ])
       .select()
       .single();
 
     if (pollError) {
-      return NextResponse.json(
-        { error: pollError.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: pollError.message }, { status: 500 });
     }
 
     // Create poll options
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
       await supabase.from("polls").delete().eq("id", poll.id);
       return NextResponse.json(
         { error: optionsError.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
     console.error("Poll creation error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -116,13 +117,15 @@ export async function GET(request: NextRequest) {
     // Build query
     let query = supabase
       .from("polls")
-      .select(`
+      .select(
+        `
         id,
         title,
         description,
         status,
         vote_type,
         is_anonymous,
+        created_by,
         expires_at,
         created_at,
         updated_at,
@@ -132,7 +135,8 @@ export async function GET(request: NextRequest) {
           option_order,
           votes_count
         )
-      `)
+      `,
+      )
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -144,18 +148,15 @@ export async function GET(request: NextRequest) {
     const { data: polls, error } = await query;
 
     if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     // Transform data to match frontend expectations
-    const transformedPolls = polls.map(poll => ({
+    const transformedPolls = polls.map((poll) => ({
       id: poll.id,
       title: poll.title,
       description: poll.description,
-      options: poll.poll_options.map(option => ({
+      options: poll.poll_options.map((option) => ({
         id: option.id,
         text: option.option_text,
         votes: option.votes_count,
@@ -165,7 +166,10 @@ export async function GET(request: NextRequest) {
       updatedAt: new Date(poll.updated_at),
       expiresAt: poll.expires_at ? new Date(poll.expires_at) : null,
       isActive: poll.status === "active",
-      totalVotes: poll.poll_options.reduce((sum, option) => sum + option.votes_count, 0),
+      totalVotes: poll.poll_options.reduce(
+        (sum, option) => sum + option.votes_count,
+        0,
+      ),
       allowMultipleVotes: poll.vote_type === "multiple",
       isAnonymous: poll.is_anonymous,
     }));
@@ -183,7 +187,7 @@ export async function GET(request: NextRequest) {
     console.error("Polls fetch error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -207,7 +211,9 @@ function validatePollData(pollData: CreatePollData) {
   if (!pollData.options || !Array.isArray(pollData.options)) {
     errors.push("Poll options are required");
   } else {
-    const validOptions = pollData.options.filter(option => option?.trim() !== "");
+    const validOptions = pollData.options.filter(
+      (option) => option?.trim() !== "",
+    );
 
     if (validOptions.length < 2) {
       errors.push("At least 2 poll options are required");

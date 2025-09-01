@@ -44,7 +44,34 @@ export function LoginForm() {
       await signIn(formData);
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Invalid email or password. Please try again.");
+      // Handle specific error cases
+      const errorMessage = err.message || "";
+
+      if (
+        errorMessage.toLowerCase().includes("invalid login credentials") ||
+        errorMessage.toLowerCase().includes("invalid email or password")
+      ) {
+        setError(
+          "Invalid email or password. Please check your credentials and try again.",
+        );
+      } else if (errorMessage.toLowerCase().includes("email not confirmed")) {
+        setError(
+          "Please check your email and confirm your account before signing in.",
+        );
+      } else if (
+        errorMessage.toLowerCase().includes("too many requests") ||
+        errorMessage.toLowerCase().includes("rate limit")
+      ) {
+        setError(
+          "Too many login attempts. Please wait a few minutes before trying again.",
+        );
+      } else if (errorMessage.toLowerCase().includes("network")) {
+        setError("Network error. Please check your connection and try again.");
+      } else if (errorMessage.toLowerCase().includes("timeout")) {
+        setError("Request timed out. Please try again.");
+      } else {
+        setError(errorMessage || "Sign in failed. Please try again.");
+      }
     }
   };
 

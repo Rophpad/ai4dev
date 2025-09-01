@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RequireAuth } from "@/components/auth/protected-route";
 import { useAuth } from "@/hooks/use-auth";
+import { useUserPolls } from "@/hooks/use-polls";
 
 import {
   Plus,
@@ -19,72 +20,9 @@ import {
   Edit,
   Trash2,
   Share,
+  Loader2,
 } from "lucide-react";
-import type { Poll } from "@/types";
-
-// Sample user's polls - replace with actual API calls
-const userPolls: Poll[] = [
-  {
-    id: "1",
-    title: "What's your favorite programming language?",
-    description:
-      "Help us understand the community's preferences for programming languages in 2024.",
-    options: [
-      { id: "1a", text: "JavaScript", votes: 45 },
-      { id: "1b", text: "Python", votes: 38 },
-      { id: "1c", text: "TypeScript", votes: 32 },
-      { id: "1d", text: "Go", votes: 15 },
-      { id: "1e", text: "Rust", votes: 12 },
-    ],
-    createdBy: "user1",
-    createdAt: new Date("2024-01-15"),
-    updatedAt: new Date("2024-01-15"),
-    expiresAt: new Date("2024-02-15"),
-    isActive: true,
-    totalVotes: 142,
-    allowMultipleVotes: false,
-    isAnonymous: false,
-  },
-  {
-    id: "4",
-    title: "Office lunch preferences",
-    description:
-      "What type of food should we order for the office lunch this Friday?",
-    options: [
-      { id: "4a", text: "Pizza", votes: 15 },
-      { id: "4b", text: "Asian cuisine", votes: 22 },
-      { id: "4c", text: "Sandwiches", votes: 8 },
-      { id: "4d", text: "Mexican food", votes: 19 },
-    ],
-    createdBy: "user1",
-    createdAt: new Date("2024-01-22"),
-    updatedAt: new Date("2024-01-22"),
-    expiresAt: new Date("2024-01-26"),
-    isActive: true,
-    totalVotes: 64,
-    allowMultipleVotes: false,
-    isAnonymous: true,
-  },
-  {
-    id: "draft1",
-    title: "Team building activity ideas",
-    description:
-      "What activities should we plan for our next team building event?",
-    options: [
-      { id: "d1a", text: "Bowling", votes: 0 },
-      { id: "d1b", text: "Escape room", votes: 0 },
-      { id: "d1c", text: "Cooking class", votes: 0 },
-      { id: "d1d", text: "Mini golf", votes: 0 },
-    ],
-    createdBy: "user1",
-    createdAt: new Date("2024-01-23"),
-    updatedAt: new Date("2024-01-23"),
-    isActive: false,
-    totalVotes: 0,
-    allowMultipleVotes: true,
-    isAnonymous: false,
-  },
-];
+//import type { Poll } from "@/types";
 
 export default function DashboardPage() {
   return (
@@ -96,6 +34,8 @@ export default function DashboardPage() {
 
 function DashboardContent() {
   const { user } = useAuth();
+  const { polls: userPolls, loading, error, deletePoll } = useUserPolls();
+
   const activePolls = userPolls.filter((poll) => poll.isActive);
   const draftPolls = userPolls.filter((poll) => !poll.isActive);
   const expiredPolls = userPolls.filter(
@@ -116,6 +56,41 @@ function DashboardContent() {
     }
     return user?.email?.split("@")[0] || "User";
   };
+
+  const handleDeletePoll = async (pollId: string) => {
+    if (window.confirm("Are you sure you want to delete this poll?")) {
+      try {
+        await deletePoll(pollId);
+      } catch (err) {
+        console.error("Failed to delete poll:", err);
+        alert("Failed to delete poll. Please try again.");
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading dashboard...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">
+            Error Loading Dashboard
+          </h3>
+          <p className="text-muted-foreground">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -247,8 +222,12 @@ function DashboardContent() {
                       <Button size="sm" variant="outline">
                         <Share className="w-4 h-4" />
                       </Button>
-                      <Button size="sm" variant="outline">
-                        <Edit className="w-4 h-4" />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeletePoll(poll.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
@@ -298,7 +277,11 @@ function DashboardContent() {
                       <Button size="sm" variant="outline">
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeletePoll(poll.id)}
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>

@@ -343,7 +343,7 @@ export function PollVoting({
                   setError("Failed to copy URL to clipboard");
                 }
               }}
-              className={urlCopied ? "bg-green-400 text-white" : ""}
+              className={urlCopied ? "" : ""}
             >
               {urlCopied ? (
                 <Check className="w-4 h-4 mr-2" />

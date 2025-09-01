@@ -18,7 +18,7 @@ import {
   Share,
   Calendar,
   User,
-  Loader2
+  Loader2,
 } from "lucide-react";
 import type { Poll } from "@/types";
 
@@ -35,7 +35,7 @@ export function PollVoting({
   hasVoted = false,
   userVotes = [],
   onVote,
-  showResults = false
+  showResults = false,
 }: PollVotingProps) {
   const [selectedOptions, setSelectedOptions] = useState<string[]>(userVotes);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,17 +44,20 @@ export function PollVoting({
   const isExpired = poll.expiresAt && new Date(poll.expiresAt) < new Date();
   const canVote = poll.isActive && !isExpired && !hasVoted;
   const timeRemaining = poll.expiresAt
-    ? Math.ceil((new Date(poll.expiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.ceil(
+        (new Date(poll.expiresAt).getTime() - new Date().getTime()) /
+          (1000 * 60 * 60 * 24),
+      )
     : null;
 
   const handleOptionSelect = (optionId: string) => {
     if (!canVote) return;
 
     if (poll.allowMultipleVotes) {
-      setSelectedOptions(prev =>
+      setSelectedOptions((prev) =>
         prev.includes(optionId)
-          ? prev.filter(id => id !== optionId)
-          : [...prev, optionId]
+          ? prev.filter((id) => id !== optionId)
+          : [...prev, optionId],
       );
     } else {
       setSelectedOptions([optionId]);
@@ -76,7 +79,11 @@ export function PollVoting({
         await onVote(selectedOptions);
       }
     } catch (err) {
-      setError("Failed to submit vote. Please try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to submit vote. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -116,27 +123,29 @@ export function PollVoting({
                 <div className="flex items-center space-x-1">
                   <Calendar className="w-4 h-4" />
                   <span>
-                    {isExpired ? (
-                      "Expired"
-                    ) : timeRemaining !== null ? (
-                      `${timeRemaining} days left`
-                    ) : (
-                      "No expiry"
-                    )}
+                    {isExpired
+                      ? "Expired"
+                      : timeRemaining !== null
+                        ? `${timeRemaining} days left`
+                        : "No expiry"}
                   </span>
                 </div>
               )}
 
               <div className="flex items-center space-x-1">
                 <Clock className="w-4 h-4" />
-                <span>Created {new Date(poll.createdAt).toLocaleDateString()}</span>
+                <span>
+                  Created {new Date(poll.createdAt).toLocaleDateString()}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Status badges */}
           <div className="flex flex-col items-end space-y-2 ml-4">
-            <Badge variant={poll.isActive && !isExpired ? "default" : "secondary"}>
+            <Badge
+              variant={poll.isActive && !isExpired ? "default" : "secondary"}
+            >
               {isExpired ? "Expired" : poll.isActive ? "Active" : "Draft"}
             </Badge>
             {poll.isAnonymous && (
@@ -188,7 +197,10 @@ export function PollVoting({
                     Select one or more options:
                   </Label>
                   {poll.options.map((option) => (
-                    <div key={option.id} className="flex items-center space-x-3">
+                    <div
+                      key={option.id}
+                      className="flex items-center space-x-3"
+                    >
                       <Checkbox
                         id={option.id}
                         checked={selectedOptions.includes(option.id)}
@@ -211,7 +223,10 @@ export function PollVoting({
                   onValueChange={(value) => handleOptionSelect(value)}
                 >
                   {poll.options.map((option) => (
-                    <div key={option.id} className="flex items-center space-x-3">
+                    <div
+                      key={option.id}
+                      className="flex items-center space-x-3"
+                    >
                       <RadioGroupItem
                         value={option.id}
                         id={option.id}
@@ -266,16 +281,19 @@ export function PollVoting({
               </div>
             ) : (
               <div className="space-y-4">
-                {sortedOptions.map((option, index) => {
+                {sortedOptions.map((option) => {
                   const percentage = getPercentage(option.votes);
-                  const isWinner = option.id === winningOption?.id && poll.totalVotes > 0;
+                  const isWinner =
+                    option.id === winningOption?.id && poll.totalVotes > 0;
                   const isUserVote = userVotes.includes(option.id);
 
                   return (
                     <div
                       key={option.id}
                       className={`p-4 rounded-lg border ${
-                        isWinner ? "border-primary bg-primary/5" : "border-border"
+                        isWinner
+                          ? "border-primary bg-primary/5"
+                          : "border-border"
                       } ${isUserVote ? "ring-2 ring-primary/20" : ""}`}
                     >
                       <div className="flex items-center justify-between mb-2">

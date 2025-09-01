@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -33,8 +33,39 @@ export function useProfile() {
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
+  // Create initial profile
+  const createProfile = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const initialProfile = {
+        id: user.id,
+        username: user.user_metadata?.username || null,
+        display_name: user.user_metadata?.display_name || null,
+        avatar_url: user.user_metadata?.avatar_url || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .insert([initialProfile])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProfile({
+        ...data,
+        email: user.email || "",
+      });
+    } catch (err: any) {
+      setError(err.message || "Failed to create profile");
+    }
+  }, [user, supabase]);
+
   // Fetch user profile
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -65,38 +96,7 @@ export function useProfile() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Create initial profile
-  const createProfile = async () => {
-    if (!user) return;
-
-    try {
-      const initialProfile = {
-        id: user.id,
-        username: user.user_metadata?.username || null,
-        display_name: user.user_metadata?.display_name || null,
-        avatar_url: user.user_metadata?.avatar_url || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .insert([initialProfile])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setProfile({
-        ...data,
-        email: user.email || "",
-      });
-    } catch (err: any) {
-      setError(err.message || "Failed to create profile");
-    }
-  };
+  }, [user, createProfile, supabase]);
 
   // Update profile
   const updateProfile = async (updates: UpdateProfileData) => {
@@ -199,7 +199,7 @@ export function useProfile() {
       if (deleteError) throw deleteError;
 
       // Update profile
-      await updateProfile({ avatar_url: null });
+      await updateProfile({ avatar_url: undefined });
     } catch (err: any) {
       const errorMessage = err.message || "Failed to delete avatar";
       setError(errorMessage);
@@ -253,7 +253,7 @@ export function useProfile() {
             ? "Username is available"
             : "Username is already taken",
       };
-    } catch (err) {
+    } catch {
       return {
         available: false,
         message: "Failed to check username availability",

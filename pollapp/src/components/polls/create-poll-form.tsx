@@ -144,7 +144,7 @@ export function CreatePollForm() {
                   className="min-h-[100px]"
                 />
                 <p className="text-xs text-muted-foreground">
-                  {formData.description.length}/1000 characters
+                  {formData?.description?.length}/1000 characters
                 </p>
               </div>
             </div>

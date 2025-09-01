@@ -1,50 +1,59 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import type { Poll, PollFilters, CreatePollData } from "@/types";
 
-// Sample data - replace with actual API calls
-const samplePolls: Poll[] = [
-  {
-    id: "1",
-    title: "What's your favorite programming language?",
-    description: "Help us understand the community's preferences for programming languages in 2024.",
-    options: [
-      { id: "1a", text: "JavaScript", votes: 45 },
-      { id: "1b", text: "Python", votes: 38 },
-      { id: "1c", text: "TypeScript", votes: 32 },
-      { id: "1d", text: "Go", votes: 15 },
-      { id: "1e", text: "Rust", votes: 12 },
-    ],
-    createdBy: "user1",
-    createdAt: new Date("2024-01-15"),
-    updatedAt: new Date("2024-01-15"),
-    expiresAt: new Date("2024-02-15"),
-    isActive: true,
-    totalVotes: 142,
-    allowMultipleVotes: false,
-    isAnonymous: false,
-  },
-  {
-    id: "2",
-    title: "Best time for team meetings?",
-    description: "Let's find a time that works for everyone on the team.",
-    options: [
-      { id: "2a", text: "9:00 AM - 10:00 AM", votes: 23 },
-      { id: "2b", text: "2:00 PM - 3:00 PM", votes: 31 },
-      { id: "2c", text: "3:00 PM - 4:00 PM", votes: 18 },
-      { id: "2d", text: "4:00 PM - 5:00 PM", votes: 8 },
-    ],
-    createdBy: "user2",
-    createdAt: new Date("2024-01-20"),
-    updatedAt: new Date("2024-01-20"),
-    expiresAt: new Date("2024-01-25"),
-    isActive: true,
-    totalVotes: 80,
-    allowMultipleVotes: true,
-    isAnonymous: true,
-  },
-];
+interface SupabasePoll {
+  id: string;
+  title: string;
+  description: string | null;
+  created_by: string;
+  status: "draft" | "active" | "expired" | "closed";
+  vote_type: "single" | "multiple";
+  is_anonymous: boolean;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+  poll_options: SupabasePollOption[];
+}
+
+interface SupabasePollOption {
+  id: string;
+  option_text: string;
+  votes_count: number;
+  option_order: number;
+}
+
+function transformSupabasePoll(supabasePoll: SupabasePoll): Poll {
+  const totalVotes = supabasePoll.poll_options.reduce(
+    (sum, option) => sum + option.votes_count,
+    0,
+  );
+
+  return {
+    id: supabasePoll.id,
+    title: supabasePoll.title,
+    description: supabasePoll.description || undefined,
+    options: supabasePoll.poll_options
+      .sort((a, b) => a.option_order - b.option_order)
+      .map((option) => ({
+        id: option.id,
+        text: option.option_text,
+        votes: option.votes_count,
+      })),
+    createdBy: supabasePoll.created_by,
+    createdAt: new Date(supabasePoll.created_at),
+    updatedAt: new Date(supabasePoll.updated_at),
+    expiresAt: supabasePoll.expires_at
+      ? new Date(supabasePoll.expires_at)
+      : undefined,
+    isActive: supabasePoll.status === "active",
+    totalVotes,
+    allowMultipleVotes: supabasePoll.vote_type === "multiple",
+    isAnonymous: supabasePoll.is_anonymous,
+  };
+}
 
 export function usePolls(filters?: PollFilters) {
   const [polls, setPolls] = useState<Poll[]>([]);
@@ -57,60 +66,75 @@ export function usePolls(filters?: PollFilters) {
         setLoading(true);
         setError(null);
 
-        // TODO: Replace with actual API call
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const supabase = createClient();
 
-        let filteredPolls = [...samplePolls];
+        let query = supabase.from("polls").select(`
+            id,
+            title,
+            description,
+            created_by,
+            status,
+            vote_type,
+            is_anonymous,
+            expires_at,
+            created_at,
+            updated_at,
+            poll_options (
+              id,
+              option_text,
+              votes_count,
+              option_order
+            )
+          `);
 
-        // Apply filters
-        if (filters?.status) {
-          if (filters.status === 'active') {
-            filteredPolls = filteredPolls.filter(poll =>
-              poll.isActive && (!poll.expiresAt || new Date(poll.expiresAt) > new Date())
-            );
-          } else if (filters.status === 'expired') {
-            filteredPolls = filteredPolls.filter(poll =>
-              poll.expiresAt && new Date(poll.expiresAt) <= new Date()
+        // Apply status filter
+        if (filters?.status && filters.status !== "all") {
+          if (filters.status === "active") {
+            query = query.eq("status", "active");
+          } else if (filters.status === "expired") {
+            query = query.or(
+              "status.eq.expired,expires_at.lt." + new Date().toISOString(),
             );
           }
         }
 
+        // Apply created by filter
         if (filters?.createdBy) {
-          filteredPolls = filteredPolls.filter(poll => poll.createdBy === filters.createdBy);
+          query = query.eq("created_by", filters.createdBy);
         }
 
         // Apply sorting
         if (filters?.sortBy) {
-          filteredPolls.sort((a, b) => {
-            let aValue: any, bValue: any;
-
-            switch (filters.sortBy) {
-              case 'createdAt':
-                aValue = new Date(a.createdAt).getTime();
-                bValue = new Date(b.createdAt).getTime();
-                break;
-              case 'totalVotes':
-                aValue = a.totalVotes;
-                bValue = b.totalVotes;
-                break;
-              case 'title':
-                aValue = a.title.toLowerCase();
-                bValue = b.title.toLowerCase();
-                break;
-              default:
-                return 0;
-            }
-
-            if (filters.sortOrder === 'desc') {
-              return bValue > aValue ? 1 : -1;
-            }
-            return aValue > bValue ? 1 : -1;
-          });
+          const sortOrder = filters.sortOrder || "desc";
+          switch (filters.sortBy) {
+            case "createdAt":
+              query = query.order("created_at", {
+                ascending: sortOrder === "asc",
+              });
+              break;
+            case "title":
+              query = query.order("title", { ascending: sortOrder === "asc" });
+              break;
+            default:
+              query = query.order("created_at", { ascending: false });
+          }
+        } else {
+          query = query.order("created_at", { ascending: false });
         }
 
-        setPolls(filteredPolls);
-      } catch (err) {
-        setError('Failed to fetch polls');
+        const { data, error: supabaseError } = await query;
+
+        if (supabaseError) {
+          throw supabaseError;
+        }
+
+        const transformedPolls = (data as SupabasePoll[]).map(
+          transformSupabasePoll,
+        );
+        setPolls(transformedPolls);
+      } catch (err: any) {
+        console.error("Error fetching polls:", err);
+        setError(err.message || "Failed to fetch polls");
       } finally {
         setLoading(false);
       }
@@ -120,7 +144,8 @@ export function usePolls(filters?: PollFilters) {
   }, [filters]);
 
   const refetch = () => {
-    // Trigger a refetch by updating the dependency
+    // Trigger a refetch by updating the filters dependency
+    setLoading(true);
   };
 
   return { polls, loading, error, refetch };
@@ -137,17 +162,46 @@ export function usePoll(id: string) {
         setLoading(true);
         setError(null);
 
-        // TODO: Replace with actual API call
-        await new Promise(resolve => setTimeout(resolve, 300));
+        const supabase = createClient();
 
-        const foundPoll = samplePolls.find(p => p.id === id);
-        if (!foundPoll) {
-          throw new Error('Poll not found');
+        const { data, error: supabaseError } = await supabase
+          .from("polls")
+          .select(
+            `
+            id,
+            title,
+            description,
+            created_by,
+            status,
+            vote_type,
+            is_anonymous,
+            expires_at,
+            created_at,
+            updated_at,
+            poll_options (
+              id,
+              option_text,
+              votes_count,
+              option_order
+            )
+          `,
+          )
+          .eq("id", id)
+          .single();
+
+        if (supabaseError) {
+          throw supabaseError;
         }
 
-        setPoll(foundPoll);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch poll');
+        if (!data) {
+          throw new Error("Poll not found");
+        }
+
+        const transformedPoll = transformSupabasePoll(data as SupabasePoll);
+        setPoll(transformedPoll);
+      } catch (err: any) {
+        console.error("Error fetching poll:", err);
+        setError(err.message || "Failed to fetch poll");
       } finally {
         setLoading(false);
       }
@@ -159,29 +213,68 @@ export function usePoll(id: string) {
   }, [id]);
 
   const vote = async (optionIds: string[]) => {
-    if (!poll) throw new Error('No poll loaded');
+    if (!poll) throw new Error("No poll loaded");
 
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      // Update local state optimistically
-      const updatedOptions = poll.options.map(option => ({
-        ...option,
-        votes: optionIds.includes(option.id) ? option.votes + 1 : option.votes,
+      if (!user) {
+        throw new Error("Authentication required to vote");
+      }
+
+      // Insert votes for each selected option
+      const votesToInsert = optionIds.map((optionId) => ({
+        poll_id: poll.id,
+        option_id: optionId,
+        user_id: user.id,
       }));
 
-      const updatedPoll: Poll = {
-        ...poll,
-        options: updatedOptions,
-        totalVotes: poll.totalVotes + optionIds.length,
-      };
+      const { error: voteError } = await supabase
+        .from("votes")
+        .insert(votesToInsert);
 
+      if (voteError) {
+        throw voteError;
+      }
+
+      // Refetch the poll to get updated vote counts
+      const { data, error: fetchError } = await supabase
+        .from("polls")
+        .select(
+          `
+          id,
+          title,
+          description,
+          created_by,
+          status,
+          vote_type,
+          is_anonymous,
+          expires_at,
+          created_at,
+          updated_at,
+          poll_options (
+            id,
+            option_text,
+            votes_count,
+            option_order
+          )
+        `,
+        )
+        .eq("id", poll.id)
+        .single();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      const updatedPoll = transformSupabasePoll(data as SupabasePoll);
       setPoll(updatedPoll);
-
-      console.log('Vote submitted:', optionIds);
-    } catch (err) {
-      throw new Error('Failed to submit vote');
+    } catch (err: any) {
+      console.error("Error submitting vote:", err);
+      throw new Error(err.message || "Failed to submit vote");
     }
   };
 
@@ -198,7 +291,7 @@ export function useCreatePoll() {
       setError(null);
 
       // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Create mock poll object
       const newPoll: Poll = {
@@ -210,7 +303,7 @@ export function useCreatePoll() {
           text,
           votes: 0,
         })),
-        createdBy: 'current-user', // TODO: Get from auth context
+        createdBy: "current-user", // TODO: Get from auth context
         createdAt: new Date(),
         updatedAt: new Date(),
         expiresAt: data.expiresAt,
@@ -220,10 +313,10 @@ export function useCreatePoll() {
         isAnonymous: data.isAnonymous || false,
       };
 
-      console.log('Poll created:', newPoll);
+      console.log("Poll created:", newPoll);
       return newPoll;
-    } catch (err) {
-      const errorMessage = 'Failed to create poll';
+    } catch (err: any) {
+      const errorMessage = err.message || "Failed to create poll";
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -245,16 +338,56 @@ export function useUserPolls(userId?: string) {
         setLoading(true);
         setError(null);
 
-        // TODO: Replace with actual API call
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const supabase = createClient();
+        let targetUserId = userId;
 
-        // Filter polls by current user (or provided userId)
-        const targetUserId = userId || 'user1'; // TODO: Get from auth context
-        const userPolls = samplePolls.filter(poll => poll.createdBy === targetUserId);
+        // If no userId provided, get current user
+        if (!targetUserId) {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (!user) {
+            throw new Error("Authentication required");
+          }
+          targetUserId = user.id;
+        }
 
-        setPolls(userPolls);
-      } catch (err) {
-        setError('Failed to fetch user polls');
+        const { data, error: supabaseError } = await supabase
+          .from("polls")
+          .select(
+            `
+            id,
+            title,
+            description,
+            created_by,
+            status,
+            vote_type,
+            is_anonymous,
+            expires_at,
+            created_at,
+            updated_at,
+            poll_options (
+              id,
+              option_text,
+              votes_count,
+              option_order
+            )
+          `,
+          )
+          .eq("created_by", targetUserId)
+          .order("created_at", { ascending: false });
+
+        if (supabaseError) {
+          throw supabaseError;
+        }
+
+        const transformedPolls = (data as SupabasePoll[]).map(
+          transformSupabasePoll,
+        );
+        setPolls(transformedPolls);
+      } catch (err: any) {
+        console.error("Error fetching user polls:", err);
+        setError(err.message || "Failed to fetch user polls");
       } finally {
         setLoading(false);
       }
@@ -265,31 +398,68 @@ export function useUserPolls(userId?: string) {
 
   const deletePoll = async (pollId: string) => {
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const supabase = createClient();
 
-      setPolls(prevPolls => prevPolls.filter(poll => poll.id !== pollId));
-      console.log('Poll deleted:', pollId);
-    } catch (err) {
-      throw new Error('Failed to delete poll');
+      const { error } = await supabase.from("polls").delete().eq("id", pollId);
+
+      if (error) {
+        throw error;
+      }
+
+      setPolls((prevPolls) => prevPolls.filter((poll) => poll.id !== pollId));
+    } catch (err: any) {
+      console.error("Error deleting poll:", err);
+      throw new Error(err.message || "Failed to delete poll");
     }
   };
 
   const updatePoll = async (pollId: string, updates: Partial<Poll>) => {
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const supabase = createClient();
 
-      setPolls(prevPolls =>
-        prevPolls.map(poll =>
+      // Transform updates to match database schema
+      const dbUpdates: any = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (updates.title) dbUpdates.title = updates.title;
+      if (updates.description !== undefined)
+        dbUpdates.description = updates.description;
+      if (updates.isActive !== undefined) {
+        dbUpdates.status = updates.isActive ? "active" : "draft";
+      }
+      if (updates.allowMultipleVotes !== undefined) {
+        dbUpdates.vote_type = updates.allowMultipleVotes
+          ? "multiple"
+          : "single";
+      }
+      if (updates.isAnonymous !== undefined)
+        dbUpdates.is_anonymous = updates.isAnonymous;
+      if (updates.expiresAt !== undefined) {
+        dbUpdates.expires_at = updates.expiresAt
+          ? updates.expiresAt.toISOString()
+          : null;
+      }
+
+      const { error } = await supabase
+        .from("polls")
+        .update(dbUpdates)
+        .eq("id", pollId);
+
+      if (error) {
+        throw error;
+      }
+
+      setPolls((prevPolls) =>
+        prevPolls.map((poll) =>
           poll.id === pollId
             ? { ...poll, ...updates, updatedAt: new Date() }
-            : poll
-        )
+            : poll,
+        ),
       );
-      console.log('Poll updated:', pollId, updates);
-    } catch (err) {
-      throw new Error('Failed to update poll');
+    } catch (err: any) {
+      console.error("Error updating poll:", err);
+      throw new Error(err.message || "Failed to update poll");
     }
   };
 

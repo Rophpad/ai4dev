@@ -19,6 +19,7 @@ import {
   Calendar,
   User,
   Loader2,
+  Check,
 } from "lucide-react";
 import type { Poll } from "@/types";
 
@@ -96,6 +97,8 @@ export function PollVoting({
 
   const sortedOptions = [...poll.options].sort((a, b) => b.votes - a.votes);
   const winningOption = sortedOptions[0];
+
+  const [urlCopied, setUrlCopied] = useState(false);
 
   return (
     <Card className="w-full">
@@ -326,10 +329,35 @@ export function PollVoting({
 
         {/* Action buttons */}
         <div className="flex items-center justify-between pt-4 border-t">
-          <Button variant="outline" size="sm">
-            <Share className="w-4 h-4 mr-2" />
-            Share Poll
-          </Button>
+          <div className="flex flex-col space-y-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(window.location.href);
+                  setError(null);
+                  setUrlCopied(true);
+                  setTimeout(() => setUrlCopied(false), 2000);
+                } catch {
+                  setError("Failed to copy URL to clipboard");
+                }
+              }}
+              className={urlCopied ? "bg-green-400 text-white" : ""}
+            >
+              {urlCopied ? (
+                <Check className="w-4 h-4 mr-2" />
+              ) : (
+                <Share className="w-4 h-4 mr-2" />
+              )}
+              {urlCopied ? "URL Copied" : "Share Poll"}
+            </Button>
+            {error && error.includes("clipboard") && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+          </div>
 
           {(hasVoted || showResults) && (
             <Button variant="ghost" size="sm">

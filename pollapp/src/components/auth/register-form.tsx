@@ -67,39 +67,26 @@ export function RegisterForm() {
     try {
       const result = await signUp(formData);
       setError(null);
-
       if (result.needsConfirmation) {
+        
         setShowConfirmation(true);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("pendingConfirmationEmail", formData.email);
+          sessionStorage.setItem(
+            "pendingConfirmationData",
+            JSON.stringify(formData),
+          );
+        }
+        router.push("/auth/confirm");
       } else {
+        
         // User is automatically logged in
         router.push("/auth/login");
       }
     } catch (err: any) {
       // Handle specific error cases
       const errorMessage = err.message || "";
-
-      if (
-        errorMessage.toLowerCase().includes("user already registered") ||
-        errorMessage.toLowerCase().includes("email address already in use") ||
-        errorMessage.toLowerCase().includes("already registered")
-      ) {
-        setError(
-          `An account with ${formData.email} already exists. Try signing in instead.`,
-        );
-      } else if (
-        errorMessage.toLowerCase().includes("email") &&
-        errorMessage.toLowerCase().includes("invalid")
-      ) {
-        setError("Please enter a valid email address.");
-      } else if (errorMessage.toLowerCase().includes("password")) {
-        setError("Password requirements not met. Please check your password.");
-      } else if (errorMessage.toLowerCase().includes("network")) {
-        setError("Network error. Please check your connection and try again.");
-      } else if (errorMessage.toLowerCase().includes("timeout")) {
-        setError("Request timed out. Please try again.");
-      } else {
-        setError(errorMessage || "Failed to create account. Please try again.");
-      }
+      setError(errorMessage);
     }
   };
 
@@ -119,7 +106,6 @@ export function RegisterForm() {
       setResendLoading(false);
     }
   };
-  console.log(showConfirmation);
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">

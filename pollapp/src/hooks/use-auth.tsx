@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import type { LoginCredentials, RegisterData } from "@/types";
+import { CANCELLED } from "node:dns/promises";
 
 interface AuthContextType {
   user: User | null;
@@ -54,7 +55,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       setLoading(false);
-      throw new Error(error.message);
+
+      // Provide more specific error messages
+      let errorMessage = error.message;
+
+      if (error.message?.toLowerCase().includes("invalid login credentials")) {
+        errorMessage =
+          "Invalid email or password. Please check your credentials and try again.";
+      } else if (error.message?.toLowerCase().includes("email not confirmed")) {
+        errorMessage =
+          "Please check your email and confirm your account before signing in.";
+      } else if (error.message?.toLowerCase().includes("too many requests")) {
+        errorMessage =
+          "Too many login attempts. Please wait a few minutes before trying again.";
+      } else if (error.message?.toLowerCase().includes("network")) {
+        errorMessage =
+          "Network error. Please check your connection and try again.";
+      }
+
+      throw new Error(errorMessage);
     }
   };
 
@@ -69,59 +88,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           username,
           display_name: username,
         },
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
       },
     });
-    console.log(data);
+
+    if (error) {
+      setLoading(false);
+
+      // Provide more specific error messages
+      let errorMessage = error.message;
+
+      if (error.message?.toLowerCase().includes("user already registered")) {
+        errorMessage = `An account with this email already exists. Please sign in instead.`;
+      } else if (error.message?.toLowerCase().includes("email")) {
+        if (error.message?.toLowerCase().includes("invalid")) {
+          errorMessage = "Please enter a valid email address.";
+        } else if (error.message?.toLowerCase().includes("already")) {
+          errorMessage = `An account with this email already exists. Please sign in instead.`;
+        }
+      } else if (error.message?.toLowerCase().includes("password")) {
+        if (
+          error.message?.toLowerCase().includes("weak") ||
+          error.message?.toLowerCase().includes("short")
+        ) {
+          errorMessage =
+            "Password is too weak. Please use at least 8 characters with a mix of letters, numbers, and symbols.";
+        } else {
+          errorMessage =
+            "Password requirements not met. Please check your password.";
+        }
+      }
+
+      throw new Error(errorMessage);
+    }
 
     setLoading(false);
 
-    if (
-      data.user?.user_metadata &&
-      "email_verified" in data.user.user_metadata &&
-      !data.user.user_metadata.email_verified
-    ) {
-      return { needsConfirmation: true };
-    } else {
-      return {
-        needsConfirmation: false,
-        user: data.user,
-      };
-    }
-
-    // if (error) {
-    //   setLoading(false);
-
-    //   // Provide more specific error messages
-    //   let errorMessage = error.message;
-
-    //   if (error.message?.toLowerCase().includes("user already registered")) {
-    //     errorMessage = `An account with this email already exists. Please sign in instead.`;
-    //   } else if (error.message?.toLowerCase().includes("email")) {
-    //     if (error.message?.toLowerCase().includes("invalid")) {
-    //       errorMessage = "Please enter a valid email address.";
-    //     } else if (error.message?.toLowerCase().includes("already")) {
-    //       errorMessage = `An account with this email already exists. Please sign in instead.`;
-    //     }
-    //   } else if (error.message?.toLowerCase().includes("password")) {
-    //     if (
-    //       error.message?.toLowerCase().includes("weak") ||
-    //       error.message?.toLowerCase().includes("short")
-    //     ) {
-    //       errorMessage =
-    //         "Password is too weak. Please use at least 8 characters with a mix of letters, numbers, and symbols.";
-    //     } else {
-    //       errorMessage =
-    //         "Password requirements not met. Please check your password.";
-    //     }
-    //   }
-
-    //   throw new Error(errorMessage);
-    // }
-
     // Return whether user needs to confirm their email
-    // return {
-    //   needsConfirmation: !data.user?.email_confirmed_at,
-    // };
+    // If user is created but email_confirmed_at is null, they need confirmation
+    return {
+      needsConfirmation: !data.user?.user_metadata?.email_verified,
+    };
   };
 
   const signOut = async () => {

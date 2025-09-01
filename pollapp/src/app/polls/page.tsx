@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useMemo } from "react";
 import { PollCard } from "@/components/polls/poll-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,125 +12,75 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Plus } from "lucide-react";
+import { Search, Filter, Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
-import type { Poll } from "@/types";
-import type { Metadata } from "next";
+import { usePolls } from "@/hooks/use-polls";
+import type { PollFilters } from "@/types";
 
-// Sample data - replace with actual API calls
-const samplePolls: Poll[] = [
-  {
-    id: "1",
-    title: "What's your favorite programming language?",
-    description:
-      "Help us understand the community's preferences for programming languages in 2024.",
-    options: [
-      { id: "1a", text: "JavaScript", votes: 45 },
-      { id: "1b", text: "Python", votes: 38 },
-      { id: "1c", text: "TypeScript", votes: 32 },
-      { id: "1d", text: "Go", votes: 15 },
-      { id: "1e", text: "Rust", votes: 12 },
-    ],
-    createdBy: "user1",
-    createdAt: new Date("2024-01-15"),
-    updatedAt: new Date("2024-01-15"),
-    expiresAt: new Date("2024-02-15"),
-    isActive: true,
-    totalVotes: 142,
-    allowMultipleVotes: false,
-    isAnonymous: false,
-  },
-  {
-    id: "2",
-    title: "Best time for team meetings?",
-    description: "Let's find a time that works for everyone on the team.",
-    options: [
-      { id: "2a", text: "9:00 AM - 10:00 AM", votes: 23 },
-      { id: "2b", text: "2:00 PM - 3:00 PM", votes: 31 },
-      { id: "2c", text: "3:00 PM - 4:00 PM", votes: 18 },
-      { id: "2d", text: "4:00 PM - 5:00 PM", votes: 8 },
-    ],
-    createdBy: "user2",
-    createdAt: new Date("2024-01-20"),
-    updatedAt: new Date("2024-01-20"),
-    expiresAt: new Date("2024-01-25"),
-    isActive: true,
-    totalVotes: 80,
-    allowMultipleVotes: true,
-    isAnonymous: true,
-  },
-  {
-    id: "3",
-    title: "Which feature should we prioritize next?",
-    description:
-      "Your input helps us decide what to work on next for our product roadmap.",
-    options: [
-      { id: "3a", text: "Dark mode", votes: 67 },
-      { id: "3b", text: "Mobile app", votes: 89 },
-      { id: "3c", text: "API integration", votes: 45 },
-      { id: "3d", text: "Advanced analytics", votes: 34 },
-    ],
-    createdBy: "user3",
-    createdAt: new Date("2024-01-10"),
-    updatedAt: new Date("2024-01-10"),
-    expiresAt: new Date("2024-02-10"),
-    isActive: true,
-    totalVotes: 235,
-    allowMultipleVotes: false,
-    isAnonymous: false,
-  },
-  {
-    id: "4",
-    title: "Office lunch preferences",
-    description:
-      "What type of food should we order for the office lunch this Friday?",
-    options: [
-      { id: "4a", text: "Pizza", votes: 15 },
-      { id: "4b", text: "Asian cuisine", votes: 22 },
-      { id: "4c", text: "Sandwiches", votes: 8 },
-      { id: "4d", text: "Mexican food", votes: 19 },
-    ],
-    createdBy: "user1",
-    createdAt: new Date("2024-01-22"),
-    updatedAt: new Date("2024-01-22"),
-    expiresAt: new Date("2024-01-26"),
-    isActive: true,
-    totalVotes: 64,
-    allowMultipleVotes: false,
-    isAnonymous: true,
-  },
-  {
-    id: "5",
-    title: "Weekend workshop topics",
-    description:
-      "Which topics would you be most interested in for our upcoming weekend workshops?",
-    options: [
-      { id: "5a", text: "Web Development", votes: 0 },
-      { id: "5b", text: "Data Science", votes: 0 },
-      { id: "5c", text: "Design Thinking", votes: 0 },
-      { id: "5d", text: "Digital Marketing", votes: 0 },
-    ],
-    createdBy: "user2",
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-    expiresAt: new Date("2024-01-01"),
-    isActive: false,
-    totalVotes: 0,
-    allowMultipleVotes: true,
-    isAnonymous: false,
-  },
-];
+function PollsContent() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "expired"
+  >("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "popular">(
+    "newest",
+  );
 
-export default function PollsPage() {
-  const activePolls = samplePolls.filter(
+  const filters: PollFilters = useMemo(
+    () => ({
+      status: statusFilter,
+      sortBy:
+        sortBy === "newest"
+          ? "createdAt"
+          : sortBy === "oldest"
+            ? "createdAt"
+            : "totalVotes",
+      sortOrder: sortBy === "oldest" ? "asc" : "desc",
+    }),
+    [statusFilter, sortBy],
+  );
+
+  const { polls, loading, error } = usePolls(filters);
+
+  // Filter polls based on search query
+  const filteredPolls = polls.filter(
+    (poll) =>
+      poll.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (poll.description &&
+        poll.description.toLowerCase().includes(searchQuery.toLowerCase())),
+  );
+
+  const activePolls = filteredPolls.filter(
     (poll) =>
       poll.isActive &&
       (!poll.expiresAt || new Date(poll.expiresAt) > new Date()),
   );
-  const expiredPolls = samplePolls.filter(
+  const expiredPolls = filteredPolls.filter(
     (poll) => poll.expiresAt && new Date(poll.expiresAt) <= new Date(),
   );
-  const draftPolls = samplePolls.filter((poll) => !poll.isActive);
+  const draftPolls = filteredPolls.filter((poll) => !poll.isActive);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading polls...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">Error Loading Polls</h3>
+          <p className="text-muted-foreground">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -152,11 +105,21 @@ export default function PollsPage() {
         <div className="flex flex-col lg:flex-row gap-4 mb-8">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search polls..." className="pl-10" />
+            <Input
+              placeholder="Search polls..."
+              className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select defaultValue="all">
+            <Select
+              value={statusFilter}
+              onValueChange={(value: "all" | "active" | "expired") =>
+                setStatusFilter(value)
+              }
+            >
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Filter" />
               </SelectTrigger>
@@ -164,10 +127,14 @@ export default function PollsPage() {
                 <SelectItem value="all">All Polls</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="expired">Expired</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
               </SelectContent>
             </Select>
-            <Select defaultValue="newest">
+            <Select
+              value={sortBy}
+              onValueChange={(value: "newest" | "oldest" | "popular") =>
+                setSortBy(value)
+              }
+            >
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -175,7 +142,6 @@ export default function PollsPage() {
                 <SelectItem value="newest">Newest</SelectItem>
                 <SelectItem value="oldest">Oldest</SelectItem>
                 <SelectItem value="popular">Most Popular</SelectItem>
-                <SelectItem value="expiring">Expiring Soon</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -255,14 +221,16 @@ export default function PollsPage() {
         )}
 
         {/* Empty State */}
-        {samplePolls.length === 0 && (
+        {polls.length === 0 && (
           <div className="text-center py-12">
             <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
               <Plus className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">No polls yet</h3>
+            <h3 className="text-xl font-semibold mb-2">No polls found</h3>
             <p className="text-muted-foreground mb-6">
-              Be the first to create a poll and start gathering opinions!
+              {searchQuery
+                ? "Try adjusting your search terms or filters."
+                : "Be the first to create a poll and start gathering opinions!"}
             </p>
             <Link href="/polls/create">
               <Button>
@@ -277,7 +245,6 @@ export default function PollsPage() {
   );
 }
 
-export const metadata: Metadata = {
-  title: "All Polls | PollApp",
-  description: "Browse and participate in community polls",
-};
+export default function PollsPage() {
+  return <PollsContent />;
+}

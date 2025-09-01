@@ -12,7 +12,7 @@ import {
   Vote,
   Clock,
   CheckCircle2,
-  XCircle
+  XCircle,
 } from "lucide-react";
 import type { Poll } from "@/types";
 
@@ -22,27 +22,38 @@ interface PollCardProps {
   compact?: boolean;
 }
 
-export function PollCard({ poll, showResults = false, compact = false }: PollCardProps) {
+export function PollCard({
+  poll,
+  showResults = false,
+  compact = false,
+}: PollCardProps) {
   const isExpired = poll.expiresAt && new Date(poll.expiresAt) < new Date();
   const timeRemaining = poll.expiresAt
-    ? Math.ceil((new Date(poll.expiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.ceil(
+        (new Date(poll.expiresAt).getTime() - new Date().getTime()) /
+          (1000 * 60 * 60 * 24),
+      )
     : null;
 
   const getWinningOption = () => {
     if (!showResults || poll.options.length === 0) return null;
     return poll.options.reduce((prev, current) =>
-      prev.votes > current.votes ? prev : current
+      prev.votes > current.votes ? prev : current,
     );
   };
 
   const winningOption = getWinningOption();
 
   return (
-    <Card className={`w-full transition-all duration-200 hover:shadow-lg ${compact ? 'p-4' : ''}`}>
-      <CardHeader className={compact ? 'pb-2' : ''}>
+    <Card
+      className={`w-full transition-all duration-200 hover:shadow-lg ${compact ? "h-70 p-4" : "h-80"} flex flex-col`}
+    >
+      <CardHeader className={`${compact ? "pb-2" : ""} flex-shrink-0 h-1/4`}>
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <CardTitle className={`${compact ? 'text-lg' : 'text-xl'} line-clamp-2`}>
+            <CardTitle
+              className={`${compact ? "text-lg" : "text-xl"} line-clamp-2`}
+            >
               {poll.title}
             </CardTitle>
             {poll.description && !compact && (
@@ -52,7 +63,9 @@ export function PollCard({ poll, showResults = false, compact = false }: PollCar
             )}
           </div>
           <div className="flex flex-col items-end space-y-2 ml-4">
-            <Badge variant={poll.isActive && !isExpired ? "default" : "secondary"}>
+            <Badge
+              variant={poll.isActive && !isExpired ? "default" : "secondary"}
+            >
               {isExpired ? (
                 <>
                   <XCircle className="w-3 h-3 mr-1" />
@@ -84,82 +97,104 @@ export function PollCard({ poll, showResults = false, compact = false }: PollCar
         </div>
       </CardHeader>
 
-      <CardContent className={compact ? 'pt-0' : ''}>
-        {/* Poll Stats */}
-        <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-4">
-          <div className="flex items-center space-x-1">
-            <Users className="w-4 h-4" />
-            <span>{poll.totalVotes} votes</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Vote className="w-4 h-4" />
-            <span>{poll.options.length} options</span>
-          </div>
-          {poll.expiresAt && (
+      <CardContent
+        className={`${compact ? "pt-0" : ""} flex-1 flex flex-col justify-between h-3/4`}
+      >
+        <div className="flex-1 h-2/3">
+          {/* Poll Stats */}
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-4">
             <div className="flex items-center space-x-1">
-              <Calendar className="w-4 h-4" />
-              <span>
-                {isExpired ? (
-                  "Expired"
-                ) : timeRemaining !== null ? (
-                  `${timeRemaining}d left`
-                ) : (
-                  "No expiry"
-                )}
-              </span>
+              <Users className="w-4 h-4" />
+              <span>{poll.totalVotes} votes</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Vote className="w-4 h-4" />
+              <span>{poll.options.length} options</span>
+            </div>
+            {poll.expiresAt && (
+              <div className="flex items-center space-x-1">
+                <Calendar className="w-4 h-4" />
+                <span>
+                  {isExpired
+                    ? "Expired"
+                    : timeRemaining !== null
+                      ? `${timeRemaining}d left`
+                      : "No expiry"}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Results Preview */}
+          {showResults && poll.totalVotes > 0 && (
+            <div className="space-y-2 mb-4">
+              {compact
+                ? // Compact view - show only winning option
+                  winningOption && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium truncate">
+                          {winningOption.text}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {poll.totalVotes > 0
+                            ? Math.round(
+                                (winningOption.votes / poll.totalVotes) * 100,
+                              )
+                            : 0}
+                          %
+                        </span>
+                      </div>
+                      <Progress
+                        value={
+                          poll.totalVotes > 0
+                            ? (winningOption.votes / poll.totalVotes) * 100
+                            : 0
+                        }
+                        className="h-2"
+                      />
+                    </div>
+                  )
+                : // Full view - show top 3 options
+                  poll.options
+                    .sort((a, b) => b.votes - a.votes)
+                    .slice(0, 3)
+                    .map((option) => (
+                      <div key={option.id} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium truncate">
+                            {option.text}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {poll.totalVotes > 0
+                              ? Math.round(
+                                  (option.votes / poll.totalVotes) * 100,
+                                )
+                              : 0}
+                            %
+                          </span>
+                        </div>
+                        <Progress
+                          value={
+                            poll.totalVotes > 0
+                              ? (option.votes / poll.totalVotes) * 100
+                              : 0
+                          }
+                          className="h-2"
+                        />
+                      </div>
+                    ))}
+              {!compact && poll.options.length > 3 && (
+                <p className="text-xs text-muted-foreground">
+                  +{poll.options.length - 3} more options
+                </p>
+              )}
             </div>
           )}
         </div>
 
-        {/* Results Preview */}
-        {showResults && poll.totalVotes > 0 && (
-          <div className="space-y-2 mb-4">
-            {compact ? (
-              // Compact view - show only winning option
-              winningOption && (
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium truncate">{winningOption.text}</span>
-                    <span className="text-muted-foreground">
-                      {poll.totalVotes > 0 ? Math.round((winningOption.votes / poll.totalVotes) * 100) : 0}%
-                    </span>
-                  </div>
-                  <Progress
-                    value={poll.totalVotes > 0 ? (winningOption.votes / poll.totalVotes) * 100 : 0}
-                    className="h-2"
-                  />
-                </div>
-              )
-            ) : (
-              // Full view - show top 3 options
-              poll.options
-                .sort((a, b) => b.votes - a.votes)
-                .slice(0, 3)
-                .map((option) => (
-                  <div key={option.id} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium truncate">{option.text}</span>
-                      <span className="text-muted-foreground">
-                        {poll.totalVotes > 0 ? Math.round((option.votes / poll.totalVotes) * 100) : 0}%
-                      </span>
-                    </div>
-                    <Progress
-                      value={poll.totalVotes > 0 ? (option.votes / poll.totalVotes) * 100 : 0}
-                      className="h-2"
-                    />
-                  </div>
-                ))
-            )}
-            {!compact && poll.options.length > 3 && (
-              <p className="text-xs text-muted-foreground">
-                +{poll.options.length - 3} more options
-              </p>
-            )}
-          </div>
-        )}
-
         {/* Action Buttons */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-shrink-0 mt-auto pt-4 h-1/3">
           <div className="flex items-center space-x-2">
             <Link href={`/polls/${poll.id}`}>
               <Button variant="outline" size={compact ? "sm" : "default"}>

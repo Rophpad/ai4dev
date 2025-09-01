@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Settings, Plus, BarChart3 } from "lucide-react";
+import { User, LogOut, Settings, Plus, BarChart3, Menu, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 
@@ -18,6 +19,7 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut, loading } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => pathname === path;
 
@@ -51,8 +53,8 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex items-center space-x-6">
+        {/* Desktop Navigation Links */}
+        <nav className="hidden md:flex items-center space-x-6">
           <Link
             href="/polls"
             className={`text-sm font-medium transition-colors hover:text-primary ${
@@ -77,15 +79,32 @@ export function Navbar() {
               <Link href="/polls/create">
                 <Button size="sm" className="flex items-center space-x-2">
                   <Plus className="h-4 w-4" />
-                  <span>Create Poll</span>
+                  <span className="hidden lg:inline">Create Poll</span>
+                  <span className="lg:hidden">Create</span>
                 </Button>
               </Link>
             </>
           )}
         </nav>
 
-        {/* User Menu / Auth Buttons */}
-        <div className="flex items-center space-x-4">
+        {/* Mobile Menu Button */}
+        <div className="md:hidden">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
+
+        {/* Desktop User Menu / Auth Buttons */}
+        <div className="hidden md:flex items-center space-x-4">
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -95,7 +114,7 @@ export function Navbar() {
                   className="flex items-center space-x-2"
                 >
                   <User className="h-4 w-4" />
-                  <span>{getDisplayName()}</span>
+                  <span className="hidden lg:inline">{getDisplayName()}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -138,6 +157,95 @@ export function Navbar() {
           )}
         </div>
       </div>
+
+      {/* Mobile Navigation Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t bg-background/95 backdrop-blur">
+          <div className="container py-4 space-y-3">
+            <Link
+              href="/polls"
+              className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                isActive("/polls")
+                  ? "bg-accent text-accent-foreground"
+                  : "text-foreground/60 hover:text-foreground hover:bg-accent/50"
+              }`}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              All Polls
+            </Link>
+
+            {user && (
+              <>
+                <Link
+                  href="/dashboard"
+                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                    isActive("/dashboard")
+                      ? "bg-accent text-accent-foreground"
+                      : "text-foreground/60 hover:text-foreground hover:bg-accent/50"
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/profile"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-foreground/60 hover:text-foreground hover:bg-accent/50 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Profile
+                </Link>
+                <Link
+                  href="/settings"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-foreground/60 hover:text-foreground hover:bg-accent/50 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Settings
+                </Link>
+                <Link
+                  href="/polls/create"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Button className="w-full justify-start">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Poll
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => {
+                    handleSignOut();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  disabled={loading}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </Button>
+              </>
+            )}
+
+            {!user && (
+              <div className="space-y-2 pt-2">
+                <Link
+                  href="/auth/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Button variant="ghost" className="w-full justify-start">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link
+                  href="/auth/register"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Button className="w-full justify-start">Sign Up</Button>
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

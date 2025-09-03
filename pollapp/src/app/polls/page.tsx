@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { PollCard } from "@/components/polls/poll-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,19 +12,40 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Pagination, usePagination } from "@/components/ui/pagination";
 import { Search, Filter, Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { usePolls } from "@/hooks/use-polls";
+import { useUrlState } from "@/hooks/use-url-state";
 import type { PollFilters } from "@/types";
 
 function PollsContent() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const { getUrlState, updateUrlState } = useUrlState();
+  const urlState = getUrlState();
+  
+  const [searchQuery, setSearchQuery] = useState(urlState.search);
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "expired"
-  >("all");
+  >(urlState.status as "all" | "active" | "expired");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "popular">(
-    "newest",
+    urlState.sort as "newest" | "oldest" | "popular",
   );
+
+  // Update URL when filters change
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    updateUrlState({ search: value, page: 1 });
+  };
+
+  const handleStatusFilterChange = (value: "all" | "active" | "expired") => {
+    setStatusFilter(value);
+    updateUrlState({ status: value, page: 1 });
+  };
+
+  const handleSortChange = (value: "newest" | "oldest" | "popular") => {
+    setSortBy(value);
+    updateUrlState({ sort: value, page: 1 });
+  };
 
   const filters: PollFilters = useMemo(
     () => ({
@@ -43,22 +64,57 @@ function PollsContent() {
   const { polls, loading, error } = usePolls(filters);
 
   // Filter polls based on search query
-  const filteredPolls = polls.filter(
-    (poll) =>
-      poll.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (poll.description &&
-        poll.description.toLowerCase().includes(searchQuery.toLowerCase())),
+  const filteredPolls = useMemo(() => 
+    polls.filter(
+      (poll) =>
+        poll.title.toLowerCase().includes((searchQuery ?? "").toLowerCase()) ||
+        (poll.description &&
+          poll.description.toLowerCase().includes((searchQuery ?? "").toLowerCase())),
+    ), [polls, searchQuery]
   );
 
-  const activePolls = filteredPolls.filter(
-    (poll) =>
-      poll.isActive &&
-      (!poll.expiresAt || new Date(poll.expiresAt) > new Date()),
-  );
-  const expiredPolls = filteredPolls.filter(
-    (poll) => poll.expiresAt && new Date(poll.expiresAt) <= new Date(),
-  );
-  const draftPolls = filteredPolls.filter((poll) => !poll.isActive);
+  // Categorize polls
+  const categorizedPolls = useMemo(() => {
+    const active = filteredPolls.filter(
+      (poll) =>
+        poll.isActive &&
+        (!poll.expiresAt || new Date(poll.expiresAt) > new Date()),
+    );
+    const expired = filteredPolls.filter(
+      (poll) => poll.expiresAt && new Date(poll.expiresAt) <= new Date(),
+    );
+    const draft = filteredPolls.filter((poll) => !poll.isActive);
+
+    return { active, expired, draft };
+  }, [filteredPolls]);
+
+  // Pagination for each category
+  const activePagination = usePagination(categorizedPolls.active.length, urlState.pageSize);
+  const expiredPagination = usePagination(categorizedPolls.expired.length, 6);
+  const draftPagination = usePagination(categorizedPolls.draft.length, 6);
+
+  // Update pagination state from URL
+  React.useEffect(() => {
+    if ((urlState.page ?? 1) !== activePagination.currentPage) {
+      activePagination.setCurrentPage(urlState.page ?? 1);
+    }
+  }, [urlState.page]);
+
+  // Handle pagination changes
+  const handleActivePageChange = (page: number) => {
+    activePagination.setCurrentPage(page);
+    updateUrlState({ page });
+  };
+
+  const handleActivePageSizeChange = (pageSize: number) => {
+    activePagination.setItemsPerPage(pageSize);
+    updateUrlState({ pageSize, page: 1 });
+  };
+
+  // Get paginated items
+  const paginatedActivePolls = activePagination.getPageItems(categorizedPolls.active);
+  const paginatedExpiredPolls = expiredPagination.getPageItems(categorizedPolls.expired);
+  const paginatedDraftPolls = draftPagination.getPageItems(categorizedPolls.draft);
 
   if (loading) {
     return (
@@ -109,16 +165,14 @@ function PollsContent() {
               placeholder="Search polls..."
               className="pl-10"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
             />
           </div>
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select
               value={statusFilter}
-              onValueChange={(value: "all" | "active" | "expired") =>
-                setStatusFilter(value)
-              }
+              onValueChange={handleStatusFilterChange}
             >
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Filter" />
@@ -131,9 +185,7 @@ function PollsContent() {
             </Select>
             <Select
               value={sortBy}
-              onValueChange={(value: "newest" | "oldest" | "popular") =>
-                setSortBy(value)
-              }
+              onValueChange={handleSortChange}
             >
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Sort by" />
@@ -150,21 +202,21 @@ function PollsContent() {
         {/* Stats */}
         <div className="flex flex-wrap gap-4 mb-8">
           <div className="flex items-center space-x-2">
-            <Badge variant="default">{activePolls.length} Active</Badge>
-            <Badge variant="secondary">{expiredPolls.length} Expired</Badge>
-            <Badge variant="outline">{draftPolls.length} Draft</Badge>
+            <Badge variant="default">{categorizedPolls.active.length} Active</Badge>
+            <Badge variant="secondary">{categorizedPolls.expired.length} Expired</Badge>
+            <Badge variant="outline">{categorizedPolls.draft.length} Draft</Badge>
           </div>
         </div>
 
         {/* Active Polls */}
-        {activePolls.length > 0 && (
+        {categorizedPolls.active.length > 0 && (
           <div className="mb-12">
             <h2 className="text-2xl font-semibold mb-6 flex items-center">
               Active Polls
-              <Badge className="ml-3">{activePolls.length}</Badge>
+              <Badge className="ml-3">{categorizedPolls.active.length}</Badge>
             </h2>
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {activePolls.map((poll) => (
+              {paginatedActivePolls.map((poll) => (
                 <PollCard
                   key={poll.id}
                   poll={poll}
@@ -173,20 +225,34 @@ function PollsContent() {
                 />
               ))}
             </div>
+            {activePagination.paginationInfo.totalPages > 1 && (
+              <div className="mt-8">
+                <Pagination
+                  currentPage={activePagination.currentPage}
+                  totalPages={activePagination.paginationInfo.totalPages}
+                  onPageChange={handleActivePageChange}
+                  itemsPerPage={activePagination.itemsPerPage}
+                  totalItems={categorizedPolls.active.length}
+                  showSizeChanger={true}
+                  onPageSizeChange={handleActivePageSizeChange}
+                  pageSizeOptions={[6, 12, 24, 48]}
+                />
+              </div>
+            )}
           </div>
         )}
 
         {/* Recent Results */}
-        {expiredPolls.length > 0 && (
+        {categorizedPolls.expired.length > 0 && (
           <div className="mb-12">
             <h2 className="text-2xl font-semibold mb-6 flex items-center">
               Recent Results
               <Badge variant="secondary" className="ml-3">
-                {expiredPolls.length}
+                {categorizedPolls.expired.length}
               </Badge>
             </h2>
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {expiredPolls.map((poll) => (
+              {paginatedExpiredPolls.map((poll) => (
                 <PollCard
                   key={poll.id}
                   poll={poll}
@@ -195,20 +261,34 @@ function PollsContent() {
                 />
               ))}
             </div>
+            {expiredPagination.paginationInfo.totalPages > 1 && (
+              <div className="mt-8">
+                <Pagination
+                  currentPage={expiredPagination.currentPage}
+                  totalPages={expiredPagination.paginationInfo.totalPages}
+                  onPageChange={expiredPagination.setCurrentPage}
+                  itemsPerPage={expiredPagination.itemsPerPage}
+                  totalItems={categorizedPolls.expired.length}
+                  showSizeChanger={true}
+                  onPageSizeChange={expiredPagination.setItemsPerPage}
+                  pageSizeOptions={[6, 12, 18, 24]}
+                />
+              </div>
+            )}
           </div>
         )}
 
         {/* Draft Polls */}
-        {draftPolls.length > 0 && (
+        {categorizedPolls.draft.length > 0 && (
           <div className="mb-12">
             <h2 className="text-2xl font-semibold mb-6 flex items-center">
               Draft Polls
               <Badge variant="outline" className="ml-3">
-                {draftPolls.length}
+                {categorizedPolls.draft.length}
               </Badge>
             </h2>
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {draftPolls.map((poll) => (
+              {paginatedDraftPolls.map((poll) => (
                 <PollCard
                   key={poll.id}
                   poll={poll}
@@ -217,6 +297,20 @@ function PollsContent() {
                 />
               ))}
             </div>
+            {draftPagination.paginationInfo.totalPages > 1 && (
+              <div className="mt-8">
+                <Pagination
+                  currentPage={draftPagination.currentPage}
+                  totalPages={draftPagination.paginationInfo.totalPages}
+                  onPageChange={draftPagination.setCurrentPage}
+                  itemsPerPage={draftPagination.itemsPerPage}
+                  totalItems={categorizedPolls.draft.length}
+                  showSizeChanger={true}
+                  onPageSizeChange={draftPagination.setItemsPerPage}
+                  pageSizeOptions={[6, 12, 18, 24]}
+                />
+              </div>
+            )}
           </div>
         )}
 

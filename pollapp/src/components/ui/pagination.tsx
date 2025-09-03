@@ -131,7 +131,7 @@ export function Pagination({
   onPageChange,
   itemsPerPage,
   totalItems,
-  showQuickJumper = false,
+//   showQuickJumper = false,
   showSizeChanger = false,
   pageSizeOptions = [12, 24, 48, 96],
   onPageSizeChange,

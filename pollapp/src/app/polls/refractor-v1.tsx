@@ -236,7 +236,7 @@ function PollsContent() {
               <span className="text-sm text-muted-foreground">Active filters:</span>
               {searchQuery && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Search: "{searchQuery}"
+                  Search: &apos;{searchQuery}&apos;
                   <X 
                     className="h-3 w-3 cursor-pointer" 
                     onClick={() => handleSearchChange('')}

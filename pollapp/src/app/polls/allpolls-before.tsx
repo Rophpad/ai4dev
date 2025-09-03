@@ -98,7 +98,7 @@ function PollsContent() {
     if ((urlState.page ?? 1) !== activePagination.currentPage) {
       activePagination.setCurrentPage(urlState.page ?? 1);
     }
-  }, [urlState.page]);
+  }, [urlState.page, activePagination]);
 
   // Handle pagination changes
   const handleActivePageChange = (page: number) => {

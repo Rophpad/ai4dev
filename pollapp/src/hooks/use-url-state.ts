@@ -1,5 +1,5 @@
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
 export interface UrlStateConfig {
   page?: number;

@@ -21,6 +21,7 @@ import {
   Edit,
   Trash2,
   Share,
+  Loader2,
 } from "lucide-react";
 //import type { Poll } from "@/types";
 
@@ -103,7 +104,7 @@ function DashboardLoadingSkeleton() {
 
 function DashboardContent() {
   const { user } = useAuth();
-  const { polls: userPolls, loading, error, deletePoll } = useUserPolls();
+  const { polls: userPolls, loading, error, deletePoll, updatePoll } = useUserPolls();
 
   const activePolls = userPolls.filter((poll) => poll.isActive);
   const draftPolls = userPolls.filter((poll) => !poll.isActive);
@@ -134,6 +135,28 @@ function DashboardContent() {
         console.error("Failed to delete poll:", err);
         alert("Failed to delete poll. Please try again.");
       }
+    }
+  };
+
+  const handlePublishPoll = async (pollId: string) => {
+    try {
+      const response = await fetch(`/api/polls/${pollId}/publish`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to publish poll');
+      }
+
+      // Simple refresh to update the state
+      window.location.reload();
+    } catch (err: any) {
+      console.error("Failed to publish poll:", err);
+      alert(err.message || "Failed to publish poll. Please try again.");
     }
   };
 
@@ -277,17 +300,23 @@ function DashboardContent() {
                     {/* Action buttons overlay */}
                     <div className="absolute top-4 right-4 flex items-center space-x-2 opacity-0 hover:opacity-100 transition-opacity">
                       <Link href={`/polls/${poll.id}`}>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" title="View Poll">
                           <Eye className="w-4 h-4" />
                         </Button>
                       </Link>
-                      <Button size="sm" variant="outline">
+                      <Link href={`/polls/${poll.id}/edit`}>
+                        <Button size="sm" variant="outline" title="Edit Poll">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                      <Button size="sm" variant="outline" title="Share Poll">
                         <Share className="w-4 h-4" />
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleDeletePoll(poll.id)}
+                        title="Delete Poll"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -333,16 +362,24 @@ function DashboardContent() {
 
                     {/* Draft-specific actions */}
                     <div className="absolute top-4 right-4 flex items-center space-x-2">
-                      <Button size="sm" variant="default">
+                      <Button 
+                        size="sm" 
+                        variant="default"
+                        onClick={() => handlePublishPoll(poll.id)}
+                        title="Publish Poll"
+                      >
                         Publish
                       </Button>
-                      <Button size="sm" variant="outline">
-                        <Edit className="w-4 h-4" />
-                      </Button>
+                      <Link href={`/polls/${poll.id}/edit`}>
+                        <Button size="sm" variant="outline" title="Edit Poll">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </Link>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleDeletePoll(poll.id)}
+                        title="Delete Poll"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

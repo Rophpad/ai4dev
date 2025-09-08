@@ -44,6 +44,20 @@ export interface CreatePollData {
   isAnonymous?: boolean;
 }
 
+export interface UpdatePollData {
+  title?: string;
+  description?: string;
+  options?: Array<{
+    id?: string;
+    text: string;
+    isNew?: boolean;
+  }>;
+  expiresAt?: Date | null;
+  allowMultipleVotes?: boolean;
+  isAnonymous?: boolean;
+  isActive?: boolean;
+}
+
 export interface Vote {
   id: string;
   pollId: string;

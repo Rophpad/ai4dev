@@ -7,6 +7,8 @@ import { usePoll, usePolls } from "@/hooks/use-polls";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, use } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Edit } from "lucide-react";
 
 // Get user vote status from database
 const getUserVoteStatus = async (pollId: string, userId?: string) => {
@@ -91,25 +93,34 @@ function PollPageContent({ params, searchParams }: PollPageProps) {
     hasVoted: false,
     userVotes: [] as string[],
   });
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Fetch user vote status
+  // Fetch current user
   useEffect(() => {
-    const fetchUserVoteStatus = async () => {
+    const fetchCurrentUser = async () => {
       const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    };
 
-      if (user && poll) {
-        const status = await getUserVoteStatus(poll.id, user.id);
+    fetchCurrentUser();
+  }, []);
+
+  // Fetch user vote status
+  useEffect(() => {
+    const fetchUserVoteStatus = async () => {
+      if (currentUser && poll) {
+        const status = await getUserVoteStatus(poll.id, currentUser.id);
         setUserVoteStatus(status);
       }
     };
 
-    if (poll) {
+    if (poll && currentUser) {
       fetchUserVoteStatus();
     }
-  }, [poll]);
+  }, [poll, currentUser]);
 
   // Update document title
   useEffect(() => {
@@ -147,17 +158,51 @@ function PollPageContent({ params, searchParams }: PollPageProps) {
   return (
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="container mx-auto max-w-4xl">
-        {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
-          <Link
-            href="/polls"
-            className="hover:text-foreground transition-colors"
-          >
-            All Polls
-          </Link>
-          <span>/</span>
-          <span className="text-foreground">{poll.title}</span>
-        </nav>
+        {/* Breadcrumb and Actions */}
+        <div className="flex items-center justify-between mb-6">
+          <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <Link
+              href="/polls"
+              className="hover:text-foreground transition-colors"
+            >
+              All Polls
+            </Link>
+            <span>/</span>
+            <span className="text-foreground">{poll.title}</span>
+          </nav>
+          
+          {/* Edit button for poll owner */}
+          {currentUser && currentUser.id === poll.createdBy && (
+            <div className="flex items-center space-x-2">
+              {!poll.isActive && (
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/polls/${poll.id}/publish`, {
+                        method: 'POST',
+                      });
+                      if (response.ok) {
+                        window.location.reload();
+                      }
+                    } catch (err) {
+                      console.error('Failed to publish poll:', err);
+                    }
+                  }}
+                >
+                  Publish Poll
+                </Button>
+              )}
+              <Link href={`/polls/${poll.id}/edit`}>
+                <Button variant="outline" size="sm">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Poll
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
 
         {/* Poll Component */}
         <PollVoting

@@ -417,39 +417,21 @@ export function useUserPolls(userId?: string) {
     try {
       const supabase = createClient();
 
-      // Transform updates to match database schema
-      const dbUpdates: any = {
-        updated_at: new Date().toISOString(),
-      };
+      // For client-side calls, use the API route
+      const response = await fetch(`/api/polls/${pollId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
 
-      if (updates.title) dbUpdates.title = updates.title;
-      if (updates.description !== undefined)
-        dbUpdates.description = updates.description;
-      if (updates.isActive !== undefined) {
-        dbUpdates.status = updates.isActive ? "active" : "draft";
-      }
-      if (updates.allowMultipleVotes !== undefined) {
-        dbUpdates.vote_type = updates.allowMultipleVotes
-          ? "multiple"
-          : "single";
-      }
-      if (updates.isAnonymous !== undefined)
-        dbUpdates.is_anonymous = updates.isAnonymous;
-      if (updates.expiresAt !== undefined) {
-        dbUpdates.expires_at = updates.expiresAt
-          ? updates.expiresAt.toISOString()
-          : null;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update poll');
       }
 
-      const { error } = await supabase
-        .from("polls")
-        .update(dbUpdates)
-        .eq("id", pollId);
-
-      if (error) {
-        throw error;
-      }
-
+      // Update local state
       setPolls((prevPolls) =>
         prevPolls.map((poll) =>
           poll.id === pollId

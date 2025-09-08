@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import type { Poll } from "@/types";
 import { PollVotersList } from "./poll-voters-list";
+import { AnonymousVotingNotice } from "./anonymous-voting-notice";
+import { VoteSimulator } from "./vote-simulator";
 
 interface PollVotingProps {
   poll: Poll;
@@ -30,6 +32,7 @@ interface PollVotingProps {
   userVotes?: string[];
   onVote?: (optionIds: string[]) => Promise<void>;
   showResults?: boolean;
+  isAuthenticated?: boolean;
 }
 
 export function PollVoting({
@@ -38,6 +41,7 @@ export function PollVoting({
   userVotes = [],
   onVote,
   showResults = false,
+  isAuthenticated = false,
 }: PollVotingProps) {
   const [selectedOptions, setSelectedOptions] = useState<string[]>(userVotes);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -192,80 +196,95 @@ export function PollVoting({
 
         {/* Voting interface or results */}
         {canVote && !showResults ? (
-          <div className="space-y-4">
-            <div className="space-y-3">
-              {poll.allowMultipleVotes ? (
-                // Multiple choice voting
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">
-                    Select one or more options:
-                  </Label>
-                  {poll.options.map((option) => (
-                    <div
-                      key={option.id}
-                      className="flex items-center space-x-3"
-                    >
-                      <Checkbox
-                        id={option.id}
-                        checked={selectedOptions.includes(option.id)}
-                        onCheckedChange={() => handleOptionSelect(option.id)}
-                        disabled={isSubmitting}
-                      />
-                      <Label
-                        htmlFor={option.id}
-                        className="flex-1 cursor-pointer py-2 px-3 rounded-md border bg-card hover:bg-accent transition-colors"
+          isAuthenticated ? (
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {poll.allowMultipleVotes ? (
+                  // Multiple choice voting
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">
+                      Select one or more options:
+                    </Label>
+                    {poll.options.map((option) => (
+                      <div
+                        key={option.id}
+                        className="flex items-center space-x-3"
                       >
-                        {option.text}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                // Single choice voting
-                <RadioGroup
-                  value={selectedOptions[0] || ""}
-                  onValueChange={(value) => handleOptionSelect(value)}
-                >
-                  {poll.options.map((option) => (
-                    <div
-                      key={option.id}
-                      className="flex items-center space-x-3"
-                    >
-                      <RadioGroupItem
-                        value={option.id}
-                        id={option.id}
-                        disabled={isSubmitting}
-                      />
-                      <Label
-                        htmlFor={option.id}
-                        className="flex-1 cursor-pointer py-2 px-3 rounded-md border bg-card hover:bg-accent transition-colors"
+                        <Checkbox
+                          id={option.id}
+                          checked={selectedOptions.includes(option.id)}
+                          onCheckedChange={() => handleOptionSelect(option.id)}
+                          disabled={isSubmitting}
+                        />
+                        <Label
+                          htmlFor={option.id}
+                          className="flex-1 cursor-pointer py-2 px-3 rounded-md border bg-card hover:bg-accent transition-colors"
+                        >
+                          {option.text}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  // Single choice voting
+                  <RadioGroup
+                    value={selectedOptions[0] || ""}
+                    onValueChange={(value) => handleOptionSelect(value)}
+                  >
+                    {poll.options.map((option) => (
+                      <div
+                        key={option.id}
+                        className="flex items-center space-x-3"
                       >
-                        {option.text}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              )}
-            </div>
+                        <RadioGroupItem
+                          value={option.id}
+                          id={option.id}
+                          disabled={isSubmitting}
+                        />
+                        <Label
+                          htmlFor={option.id}
+                          className="flex-1 cursor-pointer py-2 px-3 rounded-md border bg-card hover:bg-accent transition-colors"
+                        >
+                          {option.text}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                )}
+              </div>
 
-            <Button
-              onClick={handleSubmitVote}
-              disabled={selectedOptions.length === 0 || isSubmitting}
-              className="w-full sm:w-auto"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting Vote...
-                </>
-              ) : (
-                <>
-                  <Vote className="mr-2 h-4 w-4" />
-                  Submit Vote
-                </>
-              )}
-            </Button>
-          </div>
+              <Button
+                onClick={handleSubmitVote}
+                disabled={selectedOptions.length === 0 || isSubmitting}
+                className="w-full sm:w-auto"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting Vote...
+                  </>
+                ) : (
+                  <>
+                    <Vote className="mr-2 h-4 w-4" />
+                    Submit Vote
+                  </>
+                )}
+              </Button>
+            </div>
+          ) : (
+            // Vote simulator for unauthenticated users
+            <VoteSimulator
+              poll={poll}
+              onLogin={() => {
+                // This will be handled by the parent component
+                window.location.href = "/auth/login";
+              }}
+              onRegister={() => {
+                // This will be handled by the parent component
+                window.location.href = "/auth/register";
+              }}
+            />
+          )
         ) : (
           // Results view
           <div className="space-y-4">

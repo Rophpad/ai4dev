@@ -112,15 +112,32 @@ function PollPageContent({ params, searchParams }: PollPageProps) {
   // Fetch user vote status
   useEffect(() => {
     const fetchUserVoteStatus = async () => {
-      if (currentUser && poll) {
+      if (!poll) return;
+
+      if (currentUser) {
+        // Authenticated user
         const status = await getUserVoteStatus(poll.id, currentUser.id);
         setUserVoteStatus(status);
+      } else {
+        // Anonymous user - check localStorage for immediate feedback
+        const localVoteKey = `poll_vote_${poll.id}`;
+        const localVote = localStorage.getItem(localVoteKey);
+        
+        if (localVote) {
+          try {
+            const voteData = JSON.parse(localVote);
+            setUserVoteStatus({
+              hasVoted: true,
+              userVotes: voteData.optionIds || [],
+            });
+          } catch (error) {
+            console.warn('Could not parse local vote data:', error);
+          }
+        }
       }
     };
 
-    if (poll && currentUser) {
-      fetchUserVoteStatus();
-    }
+    fetchUserVoteStatus();
   }, [poll, currentUser]);
 
   // Update document title
@@ -132,15 +149,8 @@ function PollPageContent({ params, searchParams }: PollPageProps) {
 
   const handleVote = async (optionIds: string[]) => {
     try {
-      const res = await vote(optionIds);
-      // console.log(res);
-      if (!res || !res.success) {
-        router.push('/auth/login');
-        // alert(res?.error || "Failed to submit vote. Please try again.");
-        return;
-      }
+      await vote(optionIds);
       
-
       // Update user vote status
       setUserVoteStatus({
         hasVoted: true,
@@ -219,6 +229,7 @@ function PollPageContent({ params, searchParams }: PollPageProps) {
           userVotes={userVoteStatus.userVotes}
           onVote={handleVote}
           showResults={showResults}
+          isAuthenticated={!!currentUser}
         />
 
         {/* Related Polls Section */}

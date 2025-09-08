@@ -10,6 +10,7 @@ import { RequireAuth } from "@/components/auth/protected-route";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/hooks/use-profile";
 import { Alert } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   User,
   Mail,
@@ -191,10 +192,116 @@ function ProfileContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading profile...</span>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto py-8 px-4 max-w-4xl">
+          {/* Header Skeleton */}
+          <div className="mb-8">
+            <Skeleton className="h-9 w-32 mb-2" />
+            <Skeleton className="h-5 w-80" />
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Profile Picture Card Skeleton */}
+            <Card className="md:col-span-1">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Camera className="h-5 w-5" />
+                  <span>Profile Picture</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-center">
+                <div className="relative inline-block">
+                  {/* Avatar skeleton */}
+                  <Skeleton className="w-32 h-32 rounded-full mx-auto mb-4" />
+                </div>
+
+                {/* Change Photo Button Skeleton */}
+                <Skeleton className="h-9 w-32 mx-auto mb-2" />
+                <Skeleton className="h-4 w-40 mx-auto" />
+              </CardContent>
+            </Card>
+
+            {/* Profile Information Card Skeleton */}
+            <Card className="md:col-span-2">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  <User className="h-5 w-5" />
+                  <span>Profile Information</span>
+                </CardTitle>
+                <Skeleton className="h-9 w-24" />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  {/* Email Field Skeleton */}
+                  <div className="flex items-center space-x-3">
+                    <Mail className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-12 mb-1" />
+                      <Skeleton className="h-4 w-48" />
+                    </div>
+                  </div>
+
+                  {/* Username Field Skeleton */}
+                  <div className="flex items-center space-x-3">
+                    <User className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-16 mb-1" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </div>
+
+                  {/* Display Name Field Skeleton */}
+                  <div className="flex items-center space-x-3">
+                    <User className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-20 mb-1" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                  </div>
+
+                  {/* Bio Field Skeleton */}
+                  <div className="flex items-start space-x-3">
+                    <User className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-8 mb-1" />
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Website Field Skeleton */}
+                  <div className="flex items-center space-x-3">
+                    <Globe className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-14 mb-1" />
+                      <Skeleton className="h-4 w-40" />
+                    </div>
+                  </div>
+
+                  {/* Location Field Skeleton */}
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-14 mb-1" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                  </div>
+
+                  {/* Member Since Field Skeleton */}
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-20 mb-1" />
+                      <Skeleton className="h-4 w-36" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );

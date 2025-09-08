@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react";
 import type { PollVoters } from "@/types";
 
-export function usePollVoters(pollId: string, isAnonymous: boolean = false) {
+export function usePollVoters(pollId: string, isAnonymous: boolean = false, canView: boolean = true) {
   const [voters, setVoters] = useState<PollVoters | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchVoters = async () => {
-      if (isAnonymous || !pollId) {
+      if (isAnonymous || !pollId || !canView) {
         setVoters(null);
         return;
       }
@@ -37,10 +37,10 @@ export function usePollVoters(pollId: string, isAnonymous: boolean = false) {
     };
 
     fetchVoters();
-  }, [pollId, isAnonymous]);
+  }, [pollId, isAnonymous, canView]);
 
   const refetch = () => {
-    if (!isAnonymous && pollId) {
+    if (!isAnonymous && pollId && canView) {
       setLoading(true);
       // Trigger a refetch by calling the effect again
       const fetchVoters = async () => {

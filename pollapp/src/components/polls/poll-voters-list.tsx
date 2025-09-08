@@ -17,6 +17,7 @@ import {
     X,
 } from "lucide-react";
 import { usePollVoters } from "@/hooks/use-poll-voters";
+import { useCanViewVoters } from "@/hooks/use-can-view-voters";
 import type { Poll, Voter } from "@/types";
 
 interface PollVotersListProps {
@@ -113,10 +114,30 @@ function VotersListSkeleton() {
 
 export function PollVotersList({ poll, trigger }: PollVotersListProps) {
     const [showVoters, setShowVoters] = useState(false);
-    const { voters, loading, error, refetch } = usePollVoters(poll.id, poll.isAnonymous);
+    const { canView, loading: permissionLoading } = useCanViewVoters(
+        poll.id, 
+        poll.createdBy, 
+        poll.isAnonymous
+    );
+    const { voters, loading, error, refetch } = usePollVoters(poll.id, poll.isAnonymous, canView);
 
     // Don't show for anonymous polls
     if (poll.isAnonymous) {
+        return null;
+    }
+
+    // Show loading state while checking permissions
+    if (permissionLoading) {
+        return (
+            <Button variant="outline" size="sm" disabled>
+                <Users className="w-4 h-4 mr-2" />
+                Loading...
+            </Button>
+        );
+    }
+
+    // Don't show if user doesn't have permission
+    if (!canView) {
         return null;
     }
 

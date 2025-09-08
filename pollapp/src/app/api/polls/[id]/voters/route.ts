@@ -49,7 +49,8 @@ export async function GET(
 
     if (!isOwner && !isVoter) {
       return Response.json({ 
-        error: "Only poll creators and voters can view the voters list" 
+        error: "Only poll creators and voters can view the voters list",
+        hasPermission: false 
       }, { status: 403 });
     }
 

@@ -21,7 +21,6 @@ import {
   Edit,
   Trash2,
   Share,
-  Loader2,
 } from "lucide-react";
 //import type { Poll } from "@/types";
 
@@ -104,7 +103,7 @@ function DashboardLoadingSkeleton() {
 
 function DashboardContent() {
   const { user } = useAuth();
-  const { polls: userPolls, loading, error, deletePoll, updatePoll } = useUserPolls();
+  const { polls: userPolls, loading, error, deletePoll } = useUserPolls();
 
   const activePolls = userPolls.filter((poll) => poll.isActive);
   const draftPolls = userPolls.filter((poll) => !poll.isActive);

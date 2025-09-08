@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import type { Poll } from "@/types";
 import { PollVotersList } from "./poll-voters-list";
-import { AnonymousVotingNotice } from "./anonymous-voting-notice";
 import { VoteSimulator } from "./vote-simulator";
 
 interface PollVotingProps {

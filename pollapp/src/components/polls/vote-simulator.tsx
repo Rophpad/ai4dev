@@ -279,8 +279,8 @@ export function VoteSimulator({ poll, onLogin, onRegister }: VoteSimulatorProps)
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
-            You're not logged in. This is a demo that combines real votes with community demo votes.
-            <strong> Your vote won't be saved permanently</strong> until you create an account or log in.
+            You&apos;re not logged in. This is a demo that combines real votes with community demo votes.
+            <strong> Your vote won&apos;t be saved permanently</strong> until you create an account or log in.
             {demoVoteData.totalDemoVotes > 0 && (
               <span className="block mt-1 text-xs">
                 📊 Showing {poll.totalVotes} real votes + {demoVoteData.totalDemoVotes} demo votes from visitors
@@ -468,7 +468,7 @@ export function VoteSimulator({ poll, onLogin, onRegister }: VoteSimulatorProps)
           {showSimulation && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground text-center">
-                💡 This shows combined real votes + community demo votes. Demo votes help others see trends but aren't counted in final results.
+                💡 This shows combined real votes + community demo votes. Demo votes help others see trends but aren&apos;t counted in final results.
               </p>
               {demoVoteData.userHasVoted && (
                 <p className="text-xs text-muted-foreground text-center">

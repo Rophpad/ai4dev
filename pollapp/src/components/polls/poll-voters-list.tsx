@@ -9,16 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Users,
     Eye,
-    User,
     Clock,
-    CheckCircle2,
-    Mail,
     Calendar,
     X,
 } from "lucide-react";
 import { usePollVoters } from "@/hooks/use-poll-voters";
 import { useCanViewVoters } from "@/hooks/use-can-view-voters";
 import type { Poll, Voter } from "@/types";
+import Image from "next/image";
 
 interface PollVotersListProps {
     poll: Poll;
@@ -32,10 +30,12 @@ function VoterAvatar({ voter }: { voter: Voter }) {
     return (
         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-medium">
             {voter.avatar_url ? (
-                <img
+                <Image
                     src={voter.avatar_url}
                     alt={displayName}
                     className="w-full h-full rounded-full object-cover"
+                    width={100}
+                    height={100}
                 />
             ) : (
                 initials

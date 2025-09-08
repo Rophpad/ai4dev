@@ -415,7 +415,7 @@ export function useUserPolls(userId?: string) {
 
   const updatePoll = async (pollId: string, updates: Partial<Poll>) => {
     try {
-      const supabase = createClient();
+      // const supabase = createClient();
 
       // For client-side calls, use the API route
       const response = await fetch(`/api/polls/${pollId}`, {

@@ -18,7 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, Plus, X, Calendar, Settings, Save, ArrowLeft } from "lucide-react";
 import { usePoll, useUserPolls } from "@/hooks/use-polls";
-import type { Poll, UpdatePollData } from "@/types";
+import type { UpdatePollData } from "@/types";
 
 interface EditPollFormProps {
   pollId: string;
@@ -90,7 +90,7 @@ function EditPollFormSkeleton() {
 
 export function EditPollForm({ pollId }: EditPollFormProps) {
   const { poll, loading: pollLoading, error: pollError } = usePoll(pollId);
-  const { updatePoll } = useUserPolls();
+  // const { updatePoll } = useUserPolls();
   const router = useRouter();
 
   const [formData, setFormData] = useState<UpdatePollData>({

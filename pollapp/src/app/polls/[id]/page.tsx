@@ -85,7 +85,7 @@ interface PollPageProps {
 }
 
 function PollPageContent({ params, searchParams }: PollPageProps) {
-  const router = useRouter();
+  // const router = useRouter();
   const resolvedParams = use(params);
   const resolvedSearchParams = use(searchParams);
   const { poll, loading, error, vote } = usePoll(resolvedParams.id);

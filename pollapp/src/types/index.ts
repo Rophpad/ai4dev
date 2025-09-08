@@ -67,6 +67,22 @@ export interface Vote {
   ipAddress?: string;
 }
 
+export interface Voter {
+  id: string;
+  email?: string;
+  username?: string;
+  display_name?: string;
+  avatar_url?: string;
+  votedAt: Date;
+  selectedOptions: string[];
+}
+
+export interface PollVoters {
+  total: number;
+  voters: Voter[];
+  optionVoters: Record<string, Voter[]>;
+}
+
 // Authentication types
 export interface LoginCredentials {
   email: string;

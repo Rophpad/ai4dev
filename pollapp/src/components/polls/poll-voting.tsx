@@ -22,6 +22,7 @@ import {
   Check,
 } from "lucide-react";
 import type { Poll } from "@/types";
+import { PollVotersList } from "./poll-voters-list";
 
 interface PollVotingProps {
   poll: Poll;
@@ -359,12 +360,19 @@ export function PollVoting({
             )}
           </div>
 
-          {(hasVoted || showResults) && (
-            <Button variant="ghost" size="sm">
-              <Eye className="w-4 h-4 mr-2" />
-              {showResults ? "Hide Results" : "View Results"}
-            </Button>
-          )}
+          <div className="flex items-center space-x-2">
+            {/* Show voters list for non-anonymous polls */}
+            {!poll.isAnonymous && poll.totalVotes > 0 && (
+              <PollVotersList poll={poll} />
+            )}
+
+            {(hasVoted || showResults) && (
+              <Button variant="ghost" size="sm">
+                <Eye className="w-4 h-4 mr-2" />
+                {showResults ? "Hide Results" : "View Results"}
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -15,6 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import type { Poll } from "@/types";
+import { PollVotersList } from "./poll-voters-list";
 
 interface PollCardProps {
   poll: Poll;
@@ -202,6 +203,17 @@ export function PollCard({
                 {showResults ? "View Details" : "Vote Now"}
               </Button>
             </Link>
+            {showResults && !poll.isAnonymous && poll.totalVotes > 0 && (
+              <PollVotersList 
+                poll={poll} 
+                trigger={
+                  <Button variant="ghost" size={compact ? "sm" : "default"}>
+                    <Users className="w-4 h-4 mr-2" />
+                    Voters
+                  </Button>
+                }
+              />
+            )}
             {showResults && (
               <Button variant="ghost" size={compact ? "sm" : "default"}>
                 Share

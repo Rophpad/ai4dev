@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePoll, usePolls } from "@/hooks/use-polls";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, use } from "react";
-import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Get user vote status from database
 const getUserVoteStatus = async (pollId: string, userId?: string) => {
@@ -28,6 +28,50 @@ const getUserVoteStatus = async (pollId: string, userId?: string) => {
     userVotes,
   };
 };
+
+// Loading Skeleton
+function PollPageLoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-background py-8 px-4">
+      <div className="container mx-auto max-w-4xl">
+        {/* Breadcrumb Skeleton */}
+        <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
+          <Skeleton className="h-4 w-16" />
+          <span>/</span>
+          <Skeleton className="h-4 w-32" />
+        </div>
+
+        {/* Poll Voting Skeleton */}
+        <div className="border rounded-lg p-6">
+          <Skeleton className="h-8 w-3/4 mb-4" />
+          <Skeleton className="h-4 w-1/2 mb-6" />
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+          <Skeleton className="h-10 w-32 mt-6" />
+        </div>
+
+        {/* Related Polls Skeleton */}
+        <div className="mt-12">
+          <Skeleton className="h-6 w-48 mb-6" />
+          <div className="grid gap-4 md:grid-cols-2">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="p-4 border rounded-lg">
+                <Skeleton className="h-5 w-5/6 mb-3" />
+                <div className="flex items-center justify-between text-sm">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface PollPageProps {
   params: Promise<{
@@ -90,14 +134,7 @@ function PollPageContent({ params, searchParams }: PollPageProps) {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading poll...</span>
-        </div>
-      </div>
-    );
+    return <PollPageLoadingSkeleton />;
   }
 
   if (error || !poll) {

@@ -10,6 +10,7 @@ import { RequireAuth } from "@/components/auth/protected-route";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserPolls } from "@/hooks/use-polls";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus,
   BarChart3,
@@ -20,7 +21,6 @@ import {
   Edit,
   Trash2,
   Share,
-  Loader2,
 } from "lucide-react";
 //import type { Poll } from "@/types";
 
@@ -29,6 +29,75 @@ export default function DashboardPage() {
     <RequireAuth>
       <DashboardContent />
     </RequireAuth>
+  );
+}
+
+function DashboardLoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-8 px-4">
+        {/* Header Skeleton */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+          <div>
+            <Skeleton className="h-9 w-48 mb-3" />
+            <Skeleton className="h-5 w-64" />
+          </div>
+          <Skeleton className="h-10 w-36" />
+        </div>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-7 w-12 mb-2" />
+                <Skeleton className="h-3 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Polls Management Skeleton */}
+        <Tabs defaultValue="active" className="space-y-6">
+          <div className="grid w-full grid-cols-3 lg:w-[400px] border-b">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+
+          {/* Active Polls Skeleton */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-7 w-36" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="border rounded-lg p-4 space-y-4">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-5 w-16" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Tabs>
+      </div>
+    </div>
   );
 }
 
@@ -69,14 +138,7 @@ function DashboardContent() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading dashboard...</span>
-        </div>
-      </div>
-    );
+    return <DashboardLoadingSkeleton />;
   }
 
   if (error) {

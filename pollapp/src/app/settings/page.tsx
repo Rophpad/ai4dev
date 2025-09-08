@@ -11,6 +11,7 @@ import { Alert } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useTheme } from "next-themes";
 import {
   Settings,
   Bell,
@@ -39,6 +40,7 @@ export default function SettingsPage() {
 
 function SettingsContent() {
   const { signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   // Notification Settings
   const [notifications, setNotifications] = useState({
@@ -61,7 +63,6 @@ function SettingsContent() {
 
   // Display Settings
   const [display, setDisplay] = useState({
-    theme: "system", // light, dark, system
     language: "en",
     timezone: "America/New_York",
     pollsPerPage: "10",
@@ -527,10 +528,9 @@ function SettingsContent() {
                       Choose your preferred color scheme
                     </p>
                     <RadioGroup
-                      value={display.theme}
-                      onValueChange={(value) =>
-                        handleDisplayChange("theme", value)
-                      }
+                      value={theme}
+                      onValueChange={setTheme}
+                      className="flex items-center space-x-4"
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="light" id="light" />

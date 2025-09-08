@@ -222,7 +222,7 @@ export function usePoll(id: string) {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        throw new Error("Authentication required to vote");
+        return { success: false, error: "User not authenticated" };
       }
 
       // Insert votes for each selected option

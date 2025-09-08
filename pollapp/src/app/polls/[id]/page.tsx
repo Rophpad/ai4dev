@@ -1,7 +1,7 @@
 "use client";
 
 import { PollVoting } from "@/components/polls/poll-voting";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePoll, usePolls } from "@/hooks/use-polls";
 import { createClient } from "@/lib/supabase/client";
@@ -85,6 +85,7 @@ interface PollPageProps {
 }
 
 function PollPageContent({ params, searchParams }: PollPageProps) {
+  const router = useRouter();
   const resolvedParams = use(params);
   const resolvedSearchParams = use(searchParams);
   const { poll, loading, error, vote } = usePoll(resolvedParams.id);
@@ -131,7 +132,14 @@ function PollPageContent({ params, searchParams }: PollPageProps) {
 
   const handleVote = async (optionIds: string[]) => {
     try {
-      await vote(optionIds);
+      const res = await vote(optionIds);
+      // console.log(res);
+      if (!res || !res.success) {
+        router.push('/auth/login');
+        // alert(res?.error || "Failed to submit vote. Please try again.");
+        return;
+      }
+      
 
       // Update user vote status
       setUserVoteStatus({

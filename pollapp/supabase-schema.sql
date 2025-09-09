@@ -73,6 +73,20 @@ CREATE TABLE IF NOT EXISTS poll_participants (
   UNIQUE(poll_id, ip_address)
 );
 
+-- Create demo_votes table (for storing non-persistent demo votes)
+CREATE TABLE IF NOT EXISTS demo_votes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  poll_id UUID REFERENCES polls(id) ON DELETE CASCADE NOT NULL,
+  option_id UUID REFERENCES poll_options(id) ON DELETE CASCADE NOT NULL,
+  session_id TEXT NOT NULL, -- Browser fingerprint or session identifier
+  user_agent TEXT,
+  ip_address INET,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '30 days'), -- Demo votes expire after 30 days
+  UNIQUE(poll_id, option_id, session_id),
+  CONSTRAINT demo_vote_session_check CHECK (char_length(session_id) >= 8 AND char_length(session_id) <= 64)
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_profiles_username ON profiles(username);
 CREATE INDEX IF NOT EXISTS idx_polls_created_by ON polls(created_by);
@@ -82,6 +96,9 @@ CREATE INDEX IF NOT EXISTS idx_poll_options_poll_id ON poll_options(poll_id);
 CREATE INDEX IF NOT EXISTS idx_votes_poll_id ON votes(poll_id);
 CREATE INDEX IF NOT EXISTS idx_votes_user_id ON votes(user_id);
 CREATE INDEX IF NOT EXISTS idx_poll_participants_poll_id ON poll_participants(poll_id);
+CREATE INDEX IF NOT EXISTS idx_demo_votes_poll_id ON demo_votes(poll_id);
+CREATE INDEX IF NOT EXISTS idx_demo_votes_session_id ON demo_votes(session_id);
+CREATE INDEX IF NOT EXISTS idx_demo_votes_expires_at ON demo_votes(expires_at);
 
 -- Enable Row Level Security
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -89,6 +106,7 @@ ALTER TABLE polls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE poll_options ENABLE ROW LEVEL SECURITY;
 ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE poll_participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE demo_votes ENABLE ROW LEVEL SECURITY;
 
 -- Profiles policies
 CREATE POLICY "Public profiles are viewable by everyone" ON profiles
@@ -176,6 +194,34 @@ CREATE POLICY "Users can record their participation" ON poll_participants
     auth.role() = 'authenticated'
     AND auth.uid() = user_id
   );
+
+-- Demo votes policies
+CREATE POLICY "Anyone can view demo votes for active polls" ON demo_votes
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM polls
+      WHERE polls.id = demo_votes.poll_id
+      AND polls.status = 'active'
+    )
+  );
+
+CREATE POLICY "Anyone can insert demo votes for active polls" ON demo_votes
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM polls
+      WHERE polls.id = demo_votes.poll_id
+      AND polls.status = 'active'
+      AND (polls.expires_at IS NULL OR polls.expires_at > NOW())
+    )
+  );
+
+-- Remove UPDATE and DELETE policies for demo_votes to prevent direct DB updates/deletes
+-- All modifications should go through the API layer that validates session_id
+-- CREATE POLICY "Anyone can update their own demo votes" ON demo_votes
+--   FOR UPDATE USING (session_id = current_setting('app.session_id', true));
+
+-- CREATE POLICY "Anyone can delete their own demo votes" ON demo_votes
+--   FOR DELETE USING (session_id = current_setting('app.session_id', true));
 
 -- Function to update poll vote counts
 CREATE OR REPLACE FUNCTION update_poll_option_votes()
@@ -308,6 +354,59 @@ BEGIN
   ) INTO result
   FROM polls p
   WHERE p.id = poll_uuid;
+
+  RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to clean up expired demo votes
+CREATE OR REPLACE FUNCTION cleanup_expired_demo_votes()
+RETURNS INTEGER AS $$
+DECLARE
+  deleted_count INTEGER;
+BEGIN
+  DELETE FROM demo_votes
+  WHERE expires_at < NOW();
+  
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  
+  RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to get demo vote counts for a poll
+CREATE OR REPLACE FUNCTION get_demo_vote_counts(poll_uuid UUID)
+RETURNS JSON AS $$
+DECLARE
+  result JSON;
+BEGIN
+  -- Clean up expired demo votes first
+  PERFORM cleanup_expired_demo_votes();
+  
+  SELECT json_build_object(
+    'poll_id', poll_uuid,
+    'total_demo_votes', (
+      SELECT COUNT(DISTINCT session_id) 
+      FROM demo_votes 
+      WHERE poll_id = poll_uuid 
+      AND expires_at > NOW()
+    ),
+    'option_demo_votes', (
+      SELECT json_object_agg(
+        option_id,
+        vote_count
+      )
+      FROM (
+        SELECT 
+          option_id,
+          COUNT(*) as vote_count
+        FROM demo_votes
+        WHERE poll_id = poll_uuid 
+        AND expires_at > NOW()
+        GROUP BY option_id
+      ) option_counts
+    )
+  ) INTO result;
 
   RETURN result;
 END;

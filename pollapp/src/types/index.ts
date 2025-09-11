@@ -151,3 +151,17 @@ export interface PollsState {
   isLoading: boolean;
   error: string | null;
 }
+
+export interface Profile {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string;
+}
+
+export interface Comment {
+  id: string;
+  comment_text: string;
+  created_at: Date;
+  profiles: Profile;
+}

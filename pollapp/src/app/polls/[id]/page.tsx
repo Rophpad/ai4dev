@@ -9,6 +9,9 @@ import { useEffect, useState, use } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
+import { CommentList } from "@/components/polls/CommentList";
+import { CommentForm } from "@/components/polls/CommentForm";
+import type { Comment } from "@/types";
 
 // Get user vote status from database
 const getUserVoteStatus = async (pollId: string, userId?: string) => {
@@ -95,6 +98,11 @@ function PollPageContent({ params, searchParams }: PollPageProps) {
     userVotes: [] as string[],
   });
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [newComment, setNewComment] = useState<Comment | null>(null);
+
+  const handleCommentAdded = (comment: Comment) => {
+    setNewComment(comment);
+  };
 
   // Fetch current user
   useEffect(() => {
@@ -231,6 +239,14 @@ function PollPageContent({ params, searchParams }: PollPageProps) {
           showResults={showResults}
           isAuthenticated={!!currentUser}
         />
+
+        {/* Comments Section */}
+        <div className="mt-12">
+          <div className="mb-8">
+            <CommentForm pollId={poll.id} onCommentAdded={handleCommentAdded} />
+          </div>
+          <CommentList pollId={poll.id} newComment={newComment} />
+        </div>
 
         {/* Related Polls Section */}
         <div className="mt-12">
